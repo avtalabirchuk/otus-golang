@@ -13,7 +13,6 @@ type wordsCount struct {
 }
 
 func Top10(s string) []string {
-	// s = strings.ToLower(s)
 	freq := make(map[string]int)
 
 	f := func(c rune) bool {
@@ -38,6 +37,7 @@ func Top10(s string) []string {
 	fmt.Println(wcList)
 	result := make([]string, 0)
 	for i, v := range wcList {
+		// fmt.Println(result, v.word, ":", v.count) # for debug
 		if i < 10 {
 			result = append(result, v.word)
 		} else {
