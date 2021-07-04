@@ -38,8 +38,9 @@ func Top10(s string) []string {
 	fmt.Println(wcList)
 	result := make([]string, 0)
 	for i, v := range wcList {
-		result = append(result, v.word)
-		if i > 10 {
+		if i < 10 {
+			result = append(result, v.word)
+		} else {
 			break
 		}
 	}

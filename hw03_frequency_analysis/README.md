@@ -49,6 +49,7 @@ cat and dog, one dog,two cats and one man
 - `strings.Split`
 - `strings.Fields`
 - `sort.Slice`
+- 
 
 ### Частые ошибки
 - `regexp.MustCompile` используется в функции, а не уровне пакета - это плохо по следующим причинам:
