@@ -15,10 +15,10 @@ type wordsCount struct {
 func Top10(s string) []string {
 	freq := make(map[string]int)
 
-	f := func(c rune) bool {
+	symbolBool := func(c rune) bool {
 		return !unicode.IsLetter(c) && !unicode.IsNumber(c) && !unicode.IsPunct(c)
 	}
-	a := strings.FieldsFunc(s, f)
+	a := strings.FieldsFunc(s, symbolBool)
 	for _, c := range a {
 		freq[c]++
 	}
@@ -34,15 +34,13 @@ func Top10(s string) []string {
 		return wcList[i].count > wcList[j].count
 	})
 
-	// fmt.Println(wcList)
 	result := make([]string, 0)
 	for i, v := range wcList {
 		// fmt.Println(result, v.word, ":", v.count) # for debug
-		if i < 10 {
-			result = append(result, v.word)
-		} else {
+		if i >= 10 {
 			break
 		}
+		result = append(result, v.word)
 	}
 	fmt.Println(result)
 	return result
