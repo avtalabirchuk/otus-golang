@@ -1,5 +1,7 @@
 package hw04lrucache
 
+import "sync"
+
 type Key string
 
 type Cache interface {
@@ -12,10 +14,13 @@ type lruCache struct {
 	capacity int               // емкость
 	queue    List              // очередь последних элементов
 	items    map[Key]*ListItem // словарь
+	mutx     sync.Mutex        // Блокировка доступа на запись
 }
 
 // Задать значение ключа  и положить его в кеш.
 func (lru *lruCache) Set(key Key, value interface{}) bool {
+	lru.mutx.Lock()
+	defer lru.mutx.Unlock()
 	item, keyExists := lru.items[key]
 	// Проверка на существование ключа в кеше, если есть то переместить на верх списка
 	if keyExists {
@@ -37,6 +42,8 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 
 // Получаем значение из кэша.
 func (lru *lruCache) Get(key Key) (interface{}, bool) {
+	lru.mutx.Lock()
+	defer lru.mutx.Unlock()
 	item, keyExist := lru.items[key]
 	if keyExist {
 		lru.queue.MoveToFront(item)
