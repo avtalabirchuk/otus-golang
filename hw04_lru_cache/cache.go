@@ -34,7 +34,7 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 		if lru.queue.Len() > lru.capacity {
 			lastItem := lru.queue.Back()
 			lru.queue.Remove(lastItem)
-			delete(lru.items, Key(lastItem.Value.(cacheItem).Key))
+			delete(lru.items, lastItem.Value.(cacheItem).Key)
 		}
 	}
 	return keyExists
