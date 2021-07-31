@@ -26,16 +26,18 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 	if keyExists {
 		item.Value = cacheItem{Key: key, Value: value}
 		lru.queue.MoveToFront(item)
-	} else {
-		// Если нет, содается новый элемент очереди и помещается в начало списка
+		return keyExists // если есть выходим из функции
+	}
+	// Ключа нет, содается новый элемент очереди и помещается в начало списка
+	if lru.queue.Len() <= lru.capacity {
 		item = lru.queue.PushFront(cacheItem{Key: key, Value: value})
 		lru.items[key] = item
-		// если длинна очереди становится больше емкости, последний элемент очереди удаляется
-		if lru.queue.Len() > lru.capacity {
-			lastItem := lru.queue.Back()
-			lru.queue.Remove(lastItem)
-			delete(lru.items, lastItem.Value.(cacheItem).Key)
-		}
+	}
+	// если длинна очереди становится больше емкости, последний элемент очереди удаляется
+	if lru.queue.Len() > lru.capacity {
+		lastItem := lru.queue.Back()
+		lru.queue.Remove(lastItem)
+		delete(lru.items, lastItem.Value.(cacheItem).Key)
 	}
 	return keyExists
 }
