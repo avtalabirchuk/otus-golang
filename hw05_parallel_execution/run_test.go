@@ -74,4 +74,19 @@ func TestRun(t *testing.T) {
 		result := Run(tasks, 0, 0)
 		require.Nil(t, result)
 	})
+
+	t.Run("zero count task", func(t *testing.T) {
+		tasksCount := 0
+		tasks := make([]Task, 0, tasksCount)
+
+		var runTasksCount int32
+		atomic.AddInt32(&runTasksCount, 0)
+
+		workersCount := 100
+		maxErrorsCount := 200
+		result := Run(tasks, workersCount, maxErrorsCount)
+		require.Nil(t, result)
+
+		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
+	})
 }
