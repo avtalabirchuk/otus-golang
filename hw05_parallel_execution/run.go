@@ -52,7 +52,7 @@ func (w Worker) Working() {
 	w.wg.Done()
 }
 
-// помещает все задачи по одной в наш канал и затем закрывает его
+// помещает все задачи по одной в наш канал и затем закрывает его.
 func putToChannel(tasks []Task, channel chan<- Task) {
 	for _, task := range tasks {
 		channel <- task
