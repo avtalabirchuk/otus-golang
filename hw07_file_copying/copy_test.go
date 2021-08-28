@@ -23,6 +23,31 @@ func TestCopy(t *testing.T) {
 			offset:        0,
 			checkFileName: "testdata/out_offset0_limit0.txt",
 		},
+		{
+			limit:         10,
+			offset:        0,
+			checkFileName: "testdata/out_offset0_limit10.txt",
+		},
+		{
+			limit:         1000,
+			offset:        0,
+			checkFileName: "testdata/out_offset0_limit1000.txt",
+		},
+		{
+			limit:         10000,
+			offset:        0,
+			checkFileName: "testdata/out_offset0_limit10000.txt",
+		},
+		{
+			limit:         1000,
+			offset:        100,
+			checkFileName: "testdata/out_offset100_limit1000.txt",
+		},
+		{
+			limit:         10000,
+			offset:        6000,
+			checkFileName: "testdata/out_offset6000_limit1000.txt",
+		},
 	} {
 		t.Run(fmt.Sprintf("Limit: %d, Offset: %d", tst.limit, tst.offset), func(t *testing.T) {
 			targetFile, err := ioutil.TempFile("/tmp/", "output")
@@ -44,6 +69,25 @@ func TestCopy(t *testing.T) {
 				log.Fatal(err)
 			}
 			require.Equal(t, checkFileContent, targetFileContent)
+		})
+
+		t.Run("if offset bigger than file size", func(t *testing.T) {
+			err := Copy("testdata/input.txt", "/tmp/output.txt", 999999, 0)
+			require.Equal(t, err, ErrOffsetExceedsFileSize)
+		})
+
+		t.Run("Copy from non file", func(t *testing.T) {
+			err := Copy("testdata", "/tmp/output.txt", 123, 0)
+			require.Equal(t, err, ErrUnsupportedFile)
+		})
+		t.Run("Copy to non exist directory", func(t *testing.T) {
+			err := Copy("testdata/input.txt", "/tmp/non-exitst-dir/output.txt", 123, 0)
+			require.Error(t, err)
+		})
+
+		t.Run("Copy from non exist file", func(t *testing.T) {
+			err := Copy("testdata/non_exist_file", "/tmp/output.txt", 123, 0)
+			require.Error(t, err)
 		})
 	}
 }

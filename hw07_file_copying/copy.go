@@ -15,10 +15,16 @@ var (
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	// Place your code here.
 	fromFileInfo, err := os.Stat(fromPath)
 	if err != nil {
 		return fmt.Errorf("failed to obtain source file info: %w", err)
+	}
+	if offset > fromFileInfo.Size() {
+		return ErrOffsetExceedsFileSize
+	}
+
+	if fromFileInfo.IsDir() {
+		return ErrUnsupportedFile
 	}
 
 	// If there is no limit, then we should write all source file's content excluding offset
@@ -55,5 +61,5 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return fmt.Errorf("failed to copy contend from source to target file: %w", err)
 	}
 	bar.Finish()
-	return err
+	return nil
 }
