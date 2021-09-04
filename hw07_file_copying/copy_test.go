@@ -50,7 +50,7 @@ func TestCopy(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("Limit: %d, Offset: %d", tst.limit, tst.offset), func(t *testing.T) {
-			targetFile, err := ioutil.TempFile("/tmp/", "output")
+			targetFile, err := os.CreateTemp("/tmp/", "output")
 			require.NoError(t, err)
 			defer os.Remove(targetFile.Name())
 

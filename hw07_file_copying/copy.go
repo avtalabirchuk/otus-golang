@@ -42,7 +42,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	bar := pb.Full.Start(int(needToWrite))
 	// create source read file
-	fromFileReader := io.LimitReader(fromFile, needToWrite)
+	// fromFileReader := io.LimitReader(fromFile, needToWrite)
 	// set offset
 	_, err = fromFile.Seek(offset, 0)
 	if err != nil {
@@ -56,7 +56,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	// Create target file writer connect to progress-bar
 	toFileWriter := bar.NewProxyWriter(targetFile)
 	// Copy content from sorce file to target file
-	_, err = io.CopyN(toFileWriter, fromFileReader, needToWrite)
+	_, err = io.CopyN(toFileWriter, fromFile, needToWrite)
 	if err != nil {
 		return fmt.Errorf("failed to copy contend from source to target file: %w", err)
 	}
