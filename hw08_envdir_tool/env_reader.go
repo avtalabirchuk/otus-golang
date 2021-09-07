@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -46,7 +47,10 @@ func getValueFromFileDir(dir, fileName string) (string, error) {
 }
 func ReadDir(dir string) (Environment, error) {
 	// Place your code here
-	fileNames, _ := ioutil.ReadDir(dir)
+	fileNames, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("directory does't exist")
+	}
 
 	env := make(Environment, len(fileNames))
 	for _, fileName := range fileNames {

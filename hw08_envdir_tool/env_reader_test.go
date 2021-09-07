@@ -8,7 +8,7 @@ import (
 
 func TestReadDir(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		env, err := ReadDir("env/tmp")
+		env, err := ReadDir("testdata/env")
 		require.NoError(t, err)
 		expectedEnv := Environment{
 			"BAR":   "bar",
@@ -18,6 +18,11 @@ func TestReadDir(t *testing.T) {
 			"UNSET": "",
 		}
 		require.Equal(t, expectedEnv, env)
+	})
+
+	t.Run("Directory does't exist", func(t *testing.T) {
+		_, err := ReadDir("non_exist_dir")
+		require.EqualError(t, err, "directory does't exist")
 	})
 
 }
