@@ -49,7 +49,7 @@ func ReadDir(dir string) (Environment, error) {
 	// Place your code here
 	fileNames, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("directory does't exist")
+		return nil, fmt.Errorf("directory doesn't exist")
 	}
 
 	env := make(Environment, len(fileNames))

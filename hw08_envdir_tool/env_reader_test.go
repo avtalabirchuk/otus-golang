@@ -20,9 +20,8 @@ func TestReadDir(t *testing.T) {
 		require.Equal(t, expectedEnv, env)
 	})
 
-	t.Run("Directory does't exist", func(t *testing.T) {
+	t.Run("Directory doesn't exist", func(t *testing.T) {
 		_, err := ReadDir("non_exist_dir")
-		require.EqualError(t, err, "directory does't exist")
+		require.EqualError(t, err, "directory doesn't exist")
 	})
-
 }
