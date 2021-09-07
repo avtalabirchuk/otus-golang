@@ -8,11 +8,16 @@ import (
 
 func TestReadDir(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		env, err := ReadDir("testdata/tmp")
+		env, err := ReadDir("env/tmp")
 		require.NoError(t, err)
 		expectedEnv := Environment{
-			"BAR": "bar",
+			"BAR":   "bar",
+			"EMPTY": "",
+			"FOO":   "   foo\nwith new line",
+			"HELLO": `"hello"`,
+			"UNSET": "",
 		}
 		require.Equal(t, expectedEnv, env)
 	})
+
 }
