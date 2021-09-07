@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type Environment map[string]EnvValue
+type Environment map[string]string
 
 // EnvValue helps to distinguish between empty files and files with the first empty line.
 // type EnvValue struct {
