@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -21,8 +23,10 @@ type Environment map[string]string
 // Variables represented as files where filename is name of variable, file first line is a value.
 func readFirstLineFile(file *os.File) (string, error) {
 	reader := bufio.NewReader(file)
-	value, _ := reader.ReadString('\n')
-
+	value, err := reader.ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		return "", fmt.Errorf("error while reading first line of %s: %w", file.Name(), err)
+	}
 	return value, nil
 }
 
@@ -33,10 +37,13 @@ func processValue(value string) string {
 }
 
 func getValueFromFileDir(dir, fileName string) (string, error) {
+	if strings.Contains(fileName, "=") {
+		return "", fmt.Errorf("failed to process %s: it's name contains '='", fileName)
+	}
 	filePath := path.Join(dir, fileName)
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to open file in dir: %w", err)
 	}
 	defer file.Close()
 
@@ -45,6 +52,7 @@ func getValueFromFileDir(dir, fileName string) (string, error) {
 
 	return value, nil
 }
+
 func ReadDir(dir string) (Environment, error) {
 	// Place your code here
 	fileNames, err := ioutil.ReadDir(dir)
@@ -58,5 +66,4 @@ func ReadDir(dir string) (Environment, error) {
 		env[fileName.Name()] = value
 	}
 	return env, nil
-
 }
