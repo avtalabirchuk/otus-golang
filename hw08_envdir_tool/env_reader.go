@@ -5,19 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 )
 
 type Environment map[string]string
-
-// EnvValue helps to distinguish between empty files and files with the first empty line.
-// type EnvValue struct {
-// 	Value      string
-// 	NeedRemove bool
-// }
 
 // ReadDir reads a specified directory and returns map of env variables.
 // Variables represented as files where filename is name of variable, file first line is a value.
@@ -47,7 +40,10 @@ func getValueFromFileDir(dir, fileName string) (string, error) {
 	}
 	defer file.Close()
 
-	value, _ := readFirstLineFile(file)
+	value, err := readFirstLineFile(file)
+	if err != nil {
+		return "", nil
+	}
 	value = processValue(value)
 
 	return value, nil
@@ -55,7 +51,7 @@ func getValueFromFileDir(dir, fileName string) (string, error) {
 
 func ReadDir(dir string) (Environment, error) {
 	// Place your code here
-	fileNames, err := ioutil.ReadDir(dir)
+	fileNames, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("directory doesn't exist")
 	}
