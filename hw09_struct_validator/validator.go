@@ -33,6 +33,15 @@ func CreateValidator(validatorName, fieldType string) (Validator, error) {
 		case "in":
 			return &StringInValidator{}, nil
 		}
+	} else if fieldType == "int" {
+		switch validatorName {
+		case "min":
+			return &MinValidator{}, nil
+		case "max":
+			return &MaxValidator{}, nil
+		case "in":
+			return &IntInValidator{}, nil
+		}
 	}
 	return nil, fmt.Errorf("unknown validator %s for fieldType %s", validatorName, fieldType)
 }
