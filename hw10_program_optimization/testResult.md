@@ -100,3 +100,23 @@ ok      github.com/avtalabirchuk/otus-golang/hw10_program_optimization  3.580s
 PASS
 ok      github.com/avtalabirchuk/otus-golang/hw10_program_optimization  3.522s
 ```
+
+## after more optimization delete regexp syntax
+- `go test -v -count=1 -tags bench .`
+```
+=== RUN   TestGetDomainStat_Time_And_Memory
+    stats_optimization_test.go:44: time used: 199.383958ms
+    stats_optimization_test.go:45: memory used: 10Mb
+--- PASS: TestGetDomainStat_Time_And_Memory (2.92s)
+PASS
+ok      github.com/avtalabirchuk/otus-golang/hw10_program_optimization  3.145s
+```
+- `go test -v -count=1 -timeout=30s -tags bench .`
+```
+=== RUN   TestGetDomainStat_Time_And_Memory
+    stats_optimization_test.go:44: time used: 215.80082ms
+    stats_optimization_test.go:45: memory used: 10Mb
+--- PASS: TestGetDomainStat_Time_And_Memory (3.06s)
+PASS
+ok      github.com/avtalabirchuk/otus-golang/hw10_program_optimization  3.306s
+```

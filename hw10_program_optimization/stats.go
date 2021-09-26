@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
 )
 
@@ -17,8 +16,6 @@ type User struct {
 	Password string
 	Address  string
 }
-
-var emailRegexp = regexp.MustCompile(`.+@\w+\.([a-z0-9]{2,})+$`)
 
 type DomainStat map[string]int
 
@@ -49,10 +46,11 @@ func countDomains(u users, domain string) DomainStat {
 	result := make(DomainStat)
 
 	for _, user := range u {
-		if strings.Contains(user.Email, "."+domain) && emailRegexp.MatchString(user.Email) {
-			num := result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
-			num++
-			result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] = num
+		if strings.Contains(user.Email, "."+domain) && strings.Contains(user.Email, "@") {
+			splittedString := strings.SplitN(user.Email, "@", 2)
+			if len(splittedString) == 2 {
+				result[strings.ToLower(splittedString[1])]++
+			}
 		}
 	}
 	return result
