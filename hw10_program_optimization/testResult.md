@@ -80,3 +80,23 @@ created by testing.(*B).doBench
 FAIL    github.com/avtalabirchuk/otus-golang/hw10_program_optimization  30.458s
 FAIL
 ```
+
+## after optimization
+- `go test -v -count=1 -tags bench .`
+```
+=== RUN   TestGetDomainStat_Time_And_Memory
+    stats_optimization_test.go:44: time used: 222.640277ms
+    stats_optimization_test.go:45: memory used: 11Mb
+--- PASS: TestGetDomainStat_Time_And_Memory (3.21s)
+PASS
+ok      github.com/avtalabirchuk/otus-golang/hw10_program_optimization  3.580s
+```
+- `go test -v -count=1 -timeout=30s -tags bench .`
+```
+=== RUN   TestGetDomainStat_Time_And_Memory
+    stats_optimization_test.go:44: time used: 226.765445ms
+    stats_optimization_test.go:45: memory used: 11Mb
+--- PASS: TestGetDomainStat_Time_And_Memory (3.27s)
+PASS
+ok      github.com/avtalabirchuk/otus-golang/hw10_program_optimization  3.522s
+```
