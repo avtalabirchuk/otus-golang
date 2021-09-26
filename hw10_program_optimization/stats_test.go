@@ -37,3 +37,13 @@ func TestGetDomainStat(t *testing.T) {
 		require.Equal(t, DomainStat{}, result)
 	})
 }
+
+func TestGetDomainStatWithErrors(t *testing.T) {
+	t.Run("invalid json", func(t *testing.T) {
+		data := `{"Name":"Howard Mendoza",,,,}
+		{"Id":2,"Name":"Jesse Vasquez Username":"qRichardson","Email":"mLynch@broWsecat.com","Phone":"9-373-949-64-00","Password":"SiZLeNSGn","Address":"Fulton Hill 80"}
+		{"Id":3,"Name":Clarence Olson","Username":"RachelAdams","Email":"RoseSmith@Browsecat.com","Phone":"988-48-97","Password":"71kuz3gA5w","Address":"Monterey Park 39"}`
+		_, err := GetDomainStat(bytes.NewBufferString(data), "gov")
+		require.Error(t, err)
+	})
+}
