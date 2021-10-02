@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type UserRole string
@@ -34,6 +36,10 @@ type (
 		Code int    `validate:"in:200,404,500"`
 		Body string `json:"omitempty"`
 	}
+
+	Counter struct {
+		Counter int `validate:"max:100"`
+	}
 )
 
 func TestValidate(t *testing.T) {
@@ -42,19 +48,42 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			// Place your code here.
+			App{"1.0.0"},
+			nil,
 		},
-		// ...
-		// Place your code here.
+		{
+			Token{
+				Header:    []byte("header"),
+				Payload:   []byte("payload"),
+				Signature: []byte("signature"),
+			},
+			nil,
+		},
+		{
+			User{
+				ID:     "d5a668db-1da8-43b5-83d6-ecd7ee3c2cf8",
+				Name:   "Andrey",
+				Age:    36,
+				Email:  "ya@yandex.ru",
+				Role:   "stuff",
+				Phones: []string{"89222223329"},
+				meta:   nil,
+			},
+			nil,
+		},
+		{
+			Response{
+				Code: 200,
+				Body: "{}",
+			},
+			nil,
+		},
 	}
 
 	for i, tt := range tests {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			tt := tt
-			t.Parallel()
-
-			// Place your code here.
-			_ = tt
+		t.Run(fmt.Sprintf("case Number %d", i), func(t *testing.T) {
+			err := Validate(tt.in)
+			require.NoError(t, err)
 		})
 	}
 }
