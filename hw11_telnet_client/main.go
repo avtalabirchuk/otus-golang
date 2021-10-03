@@ -14,63 +14,58 @@ import (
 var durTime = 10
 
 func main() {
-	// Place your code here,
-	// P.S. Do not rush to throw context down, think think if it is useful with blocking operation?
-	if len(os.Args) < 3 {
-		log.Fatal("Please use: telnet host port [--timeout=2s]")
-	}
 	timeout := flag.Duration("timeout", time.Duration(durTime), "use it to specify dial timeout")
+	flag.Usage = func() {
+		fmt.Fprint(flag.CommandLine.Output(), "Please use: telnet host port [--timeout=2s]")
+	}
 	flag.Parse()
-	log.Println(os.Args[1:])
-	host := os.Args[2]
-	port := os.Args[3]
+	flag.Usage()
+	telnetArgs := flag.Args()
+
+	host := telnetArgs[0]
+	port := telnetArgs[1]
 	address := net.JoinHostPort(host, port)
-	log.Println(address)
 	client := NewTelnetClient(
 		address,
 		*timeout,
 		os.Stdin,
 		os.Stdout)
-
-	defer client.Close()
 	if err := client.Connect(); err != nil {
-		panic(err)
+		log.Println(err)
+		return
 	}
+	defer client.Close()
 	log.Printf("Connect to %v...", address)
 	sigintChannel := make(chan os.Signal, 1)
-	doneCh := make(chan struct{})
+	doneCh := make(chan int)
 
 	signal.Notify(sigintChannel, syscall.SIGINT)
 
 	go func() {
 		<-sigintChannel
-		fmt.Println("Got SIGINT")
-		doneCh <- struct{}{}
+		_, err := os.Stderr.WriteString("Got SIGINT")
+		if err != nil {
+			log.Fatal(err)
+		}
+		doneCh <- 3
 	}()
 	go func() {
 		log.Println("Start receiving")
-		for {
-			err := client.Receive()
-			if err != nil {
-				log.Println("Error during receive:", err)
-				break
-			}
-			log.Println("Data received")
+		err := client.Receive()
+		if err != nil {
+			log.Println("Error during receive:", err)
 		}
-		doneCh <- struct{}{}
+		log.Println("Stop receiving")
+		doneCh <- 1
 	}()
 	go func() {
-		defer client.Close()
 		log.Println("Start sending")
-		for {
-			err := client.Send()
-			if err != nil {
-				log.Println("Error during send:", err)
-				break
-			}
-			log.Println("Data send")
+		err := client.Send()
+		if err != nil {
+			log.Println("Error during send:", err)
 		}
-		doneCh <- struct{}{}
+		log.Println("Stop sending")
+		doneCh <- 2
 	}()
 	<-doneCh
 }
