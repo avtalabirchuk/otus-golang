@@ -14,6 +14,7 @@ type TelnetClient interface {
 	Send() error
 	Receive() error
 }
+
 type TCPClient struct {
 	address string
 	timeout time.Duration
