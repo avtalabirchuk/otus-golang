@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 )
@@ -32,43 +31,46 @@ func main() {
 		*timeout,
 		os.Stdin,
 		os.Stdout)
+
+	defer client.Close()
 	if err := client.Connect(); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	log.Printf("Connect to %v...", address)
 	sigintChannel := make(chan os.Signal, 1)
+	doneCh := make(chan struct{})
 
 	signal.Notify(sigintChannel, syscall.SIGINT)
 
 	go func() {
 		<-sigintChannel
 		fmt.Println("Got SIGINT")
-		err := client.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
+		doneCh <- struct{}{}
 	}()
-	wg := sync.WaitGroup{}
-	wg.Add(1)
 	go func() {
+		log.Println("Start receiving")
 		for {
 			err := client.Receive()
 			if err != nil {
-				log.Println(err)
+				log.Println("Error during receive:", err)
 				break
 			}
+			log.Println("Data received")
 		}
-		wg.Done()
+		doneCh <- struct{}{}
 	}()
 	go func() {
+		defer client.Close()
+		log.Println("Start sending")
 		for {
 			err := client.Send()
 			if err != nil {
-				log.Println(err)
+				log.Println("Error during send:", err)
 				break
 			}
+			log.Println("Data send")
 		}
-		wg.Done()
+		doneCh <- struct{}{}
 	}()
-	wg.Wait()
+	<-doneCh
 }
