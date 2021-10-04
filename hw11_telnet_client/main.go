@@ -11,12 +11,12 @@ import (
 	"time"
 )
 
-var durTime = 10
+var durTime = 10000000
 
 func main() {
 	timeout := flag.Duration("timeout", time.Duration(durTime), "use it to specify dial timeout")
 	flag.Usage = func() {
-		fmt.Fprint(flag.CommandLine.Output(), "Please use: telnet host port [--timeout=2s]")
+		fmt.Fprint(flag.CommandLine.Output(), "Please use: telnet host port [--timeout=2s]\n")
 	}
 	flag.Parse()
 	flag.Usage()
@@ -30,12 +30,13 @@ func main() {
 		*timeout,
 		os.Stdin,
 		os.Stdout)
+
 	if err := client.Connect(); err != nil {
 		log.Println(err)
 		return
 	}
 	defer client.Close()
-	log.Printf("Connect to %v...", address)
+	log.Printf("Connected to %s...", address)
 	sigintChannel := make(chan os.Signal, 1)
 	doneCh := make(chan int)
 
@@ -49,6 +50,7 @@ func main() {
 		}
 		doneCh <- 3
 	}()
+
 	go func() {
 		log.Println("Start receiving")
 		err := client.Receive()
@@ -58,6 +60,7 @@ func main() {
 		log.Println("Stop receiving")
 		doneCh <- 1
 	}()
+
 	go func() {
 		log.Println("Start sending")
 		err := client.Send()
@@ -67,5 +70,6 @@ func main() {
 		log.Println("Stop sending")
 		doneCh <- 2
 	}()
-	<-doneCh
+
+	log.Println(<-doneCh)
 }
