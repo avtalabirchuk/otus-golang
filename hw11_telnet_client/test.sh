@@ -13,8 +13,8 @@ sleep 1
 TL_PID=$!
 
 sleep 5
-kill ${TL_PID} 2>/dev/null &&
-kill ${NC_PID} 2>/dev/null &&
+kill ${TL_PID} 
+kill ${NC_PID} 
 
 function fileEquals() {
   local fileData
