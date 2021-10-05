@@ -13,18 +13,16 @@ sleep 5
 TL_PID=$!
 
 sleep 5
-kill ${TL_PID} 2>/dev/null || true
-kill ${NC_PID} 2>/dev/null || true
-echo 123 >/tmp/123 && cat /tmp/123
+kill ${TL_PID} 2>/dev/null && \
+kill ${NC_PID} 2>/dev/null
+#echo 123 >/tmp/123 && cat /tmp/123
 # cat $NC 
 # cat $TELNET
 # echo "path=$NC data=$(cat $NC)"
 # echo "path=$TELNET data=$(cat $TELNET)"
-sleep 1
 
 function fileEquals() {
   local fileData
-  cat $1
   fileData=$(cat "$1")
   [ "${fileData}" = "${2}" ] || (echo -e "unexpected output, $1:\n${fileData}" && exit 1)
 }
