@@ -7,7 +7,7 @@ go build -o go-telnet
 NC_PID=$!
 ip a
 
-#sleep 2
+sleep 5
 (echo -e "I" && cat 2>/dev/null) | ./go-telnet --timeout=5s 127.0.0.1 4242 >/tmp/telnet.out &
 TL_PID=$!
 ip a
