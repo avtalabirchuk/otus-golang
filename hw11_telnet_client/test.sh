@@ -3,12 +3,14 @@ set -xeuo pipefail
 
 go build -o go-telnet
 
-(echo -e "Hello" && cat 2>/dev/null) | nc -l localhost 4242 >/tmp/nc.out &
+(echo -e "Hello" && cat 2>/dev/null) | nc -l 127.0.0.1 4242 >/tmp/nc.out &
 NC_PID=$!
+ip a
 
 #sleep 2
-(echo -e "I" && cat 2>/dev/null) | ./go-telnet --timeout=5s localhost 4242 >/tmp/telnet.out &
+(echo -e "I" && cat 2>/dev/null) | ./go-telnet --timeout=5s 127.0.0.1 4242 >/tmp/telnet.out &
 TL_PID=$!
+ip a
 
 sleep 5
 kill ${TL_PID} 2>/dev/null || true
