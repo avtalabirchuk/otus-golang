@@ -8,18 +8,13 @@ go build -o go-telnet
 (echo -e "Hello\nFrom\nNC\n" && cat 2>/dev/null) | nc -l localhost 4242 >$NC &
 NC_PID=$!
 
-sleep 5
+sleep 1
 (echo -e "I\nam\nTELNET client\n" && cat 2>/dev/null) | ./go-telnet --timeout=5s localhost 4242 >$TELNET &
 TL_PID=$!
 
 sleep 5
 kill ${TL_PID} 2>/dev/null &&
-kill ${NC_PID} 2>/dev/null
-#echo 123 >/tmp/123 && cat /tmp/123
-# cat $NC 
-# cat $TELNET
-# echo "path=$NC data=$(cat $NC)"
-# echo "path=$TELNET data=$(cat $TELNET)"
+kill ${NC_PID} 2>/dev/null &&
 
 function fileEquals() {
   local fileData
