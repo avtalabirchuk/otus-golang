@@ -5,16 +5,17 @@ TELNET=/tmp/telnet.out
 
 go build -o go-telnet
 
-(echo -e "Hello\nFrom\nNC\n" && cat 2>/dev/null) | nc -l localhost 4242 >$NC &
+(echo -e "Hello\nFrom\nNC\n" && cat 2>/dev/null) | nc -l 127.0.0.1 4242 >$NC &
 NC_PID=$!
 
 sleep 1
-(echo -e "I\nam\nTELNET client\n" && cat 2>/dev/null) | ./go-telnet --timeout=5s localhost 4242 >$TELNET &
+(echo -e "I\nam\nTELNET client\n" && cat 2>/dev/null) | ./go-telnet --timeout=5s 127.0.0.1 4242 >$TELNET &
 TL_PID=$!
 
 sleep 5
-kill ${TL_PID} 
-kill ${NC_PID} 
+ps | grep '127.0.0.1' | awk '{print $1}' | xargs kill || true
+# kill ${TL_PID} 2>/dev/null || true
+# kill ${NC_PID} 2>/dev/null || true
 
 function fileEquals() {
   local fileData
