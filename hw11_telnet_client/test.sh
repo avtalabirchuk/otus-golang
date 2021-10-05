@@ -17,6 +17,7 @@ sleep 1
 
 function fileEquals() {
   local fileData
+  cat $1
   fileData=$(cat "$1")
   [ "${fileData}" = "${2}" ] || (echo -e "unexpected output, $1:\n${fileData}" && exit 1)
 }
