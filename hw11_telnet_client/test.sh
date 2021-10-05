@@ -13,7 +13,7 @@ sleep 5
 TL_PID=$!
 
 sleep 5
-kill ${TL_PID} 2>/dev/null && \
+kill ${TL_PID} 2>/dev/null
 kill ${NC_PID} 2>/dev/null
 #echo 123 >/tmp/123 && cat /tmp/123
 # cat $NC 
