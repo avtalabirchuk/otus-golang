@@ -13,7 +13,8 @@ sleep 1
 TL_PID=$!
 
 sleep 5
-ps | grep '127.0.0.1' | awk '{print $1}' | xargs kill || true
+ps | grep '127.0.0.1'
+ps | grep '127.0.0.1' | awk '{print $1}' | xargs kill -s kill || true
 # kill ${TL_PID} 2>/dev/null || true
 # kill ${NC_PID} 2>/dev/null || true
 
