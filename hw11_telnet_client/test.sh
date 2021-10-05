@@ -15,6 +15,8 @@ TL_PID=$!
 sleep 5
 kill ${TL_PID} 2>/dev/null || true
 kill ${NC_PID} 2>/dev/null || true
+#cat $NC 
+cat $TELNET
 echo "path=$NC data=$(cat $NC)"
 echo "path=$TELNET data=$(cat $TELNET)"
 sleep 1
