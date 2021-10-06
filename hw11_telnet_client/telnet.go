@@ -9,22 +9,21 @@ import (
 
 type TelnetClient interface {
 	Connect() error
+	io.Closer
 	Send() error
 	Receive() error
-	Close() error
 }
 
-type TCPClient struct {
+type client struct {
 	address string
 	timeout time.Duration
-
-	in   io.ReadCloser
-	out  io.Writer
-	conn net.Conn
+	in      io.ReadCloser
+	out     io.Writer
+	conn    net.Conn
 }
 
 func NewTelnetClient(address string, timeout time.Duration, in io.ReadCloser, out io.Writer) TelnetClient {
-	return &TCPClient{
+	return &client{
 		address: address,
 		timeout: timeout,
 		in:      in,
@@ -32,33 +31,35 @@ func NewTelnetClient(address string, timeout time.Duration, in io.ReadCloser, ou
 	}
 }
 
-func (tc *TCPClient) Connect() error {
-	conn, err := net.DialTimeout("tcp", tc.address, tc.timeout)
+func (c *client) Connect() error {
+	conn, err := net.DialTimeout("tcp", c.address, c.timeout)
 	if err != nil {
-		return fmt.Errorf("error on connect: %w", err)
+		return fmt.Errorf("connect: %w", err)
 	}
-	tc.conn = conn
+
+	c.conn = conn
 	return nil
 }
 
-func (tc *TCPClient) Close() error {
-	if err := tc.conn.Close(); err != nil {
-		return fmt.Errorf("error on closing client: %w", err)
-	}
-	return nil
-}
-
-func (tc *TCPClient) Send() error {
-	if _, err := io.Copy(tc.conn, tc.in); err != nil {
-		return fmt.Errorf("error while sending: %w", err)
+func (c *client) Close() error {
+	if c.conn != nil {
+		if err := c.conn.Close(); err != nil {
+			return fmt.Errorf("close: %w", err)
+		}
 	}
 	return nil
 }
 
-func (tc *TCPClient) Receive() error {
-	_, err := io.Copy(tc.out, tc.conn)
-	if err != nil {
-		return fmt.Errorf("error while receiving: %w", err)
+func (c *client) Send() error {
+	if _, err := io.Copy(c.conn, c.in); err != nil {
+		return fmt.Errorf("send: %w", err)
+	}
+	return nil
+}
+
+func (c *client) Receive() error {
+	if _, err := io.Copy(c.out, c.conn); err != nil {
+		return fmt.Errorf("send: %w", err)
 	}
 	return nil
 }
