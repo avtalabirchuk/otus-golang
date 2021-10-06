@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -12,24 +13,30 @@ import (
 )
 
 func main() {
-	timeout := flag.Duration("timeout", 10*time.Second, "")
-	flag.Parse()
-
-	if len(flag.Args()) != 2 {
-		log.Fatalln("tuc")
+	timeout := flag.Duration("timeout", 10*time.Second, "use it to specify dial timeout")
+	flag.Usage = func() {
+		fmt.Fprint(flag.CommandLine.Output(), "Please use: telnet host port [--timeout=2s]\n")
 	}
+	flag.Parse()
+	flag.Usage()
+	telnetArgs := flag.Args()
 
-	host := flag.Arg(0)
-	port := flag.Arg(1)
-
-	client := NewTelnetClient(net.JoinHostPort(host, port), *timeout, os.Stdin, os.Stdout)
+	host := telnetArgs[0]
+	port := telnetArgs[1]
+	address := net.JoinHostPort(host, port)
+	client := NewTelnetClient(
+		address,
+		*timeout,
+		os.Stdin,
+		os.Stdout)
 	defer client.Close()
 
-	err := client.Connect()
-	if err != nil {
-		log.Fatalln("failed to connect:", err)
+	if err := client.Connect(); err != nil {
+		log.Println(err)
+		return
 	}
 
+	log.Printf("Connected to %s...", address)
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
@@ -40,6 +47,7 @@ func main() {
 
 	go func() {
 		client.Receive()
+		log.Println("...Connection was closed by peer")
 		cancel()
 	}()
 
