@@ -1,0 +1,29 @@
+run:
+  tests: false
+
+linters-settings:
+  funlen:
+    lines: 150
+    statements: 80
+  goimports:
+    local-prefixes: github.com/avtalabirchuk/otus-golang/hw12
+
+linters:
+  disable-all: false
+  enable-all: true
+  disable:
+    - exhaustive
+    - exhaustivestruct
+    - goerr113
+    - gochecknoglobals
+    - gochecknoinits
+    - godox
+    - gofumpt
+    - gomnd
+    - lll
+    - nakedret
+    - nlreturn
+    - testpackage
+    - wsl
+    - wrapcheck
+    - forbidigo
