@@ -164,6 +164,7 @@ func (s *store) queryList(ctx context.Context, query string, args ...interface{}
 	}
 	defer func() {
 		err := rows.Close()
+		_ = rows.Err()
 		if err != nil && resultErr == nil {
 			resultErr = err
 		}
