@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/app"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage"
-	"github.com/stretchr/testify/suite"
 )
 
 type UpdateEventTest struct {

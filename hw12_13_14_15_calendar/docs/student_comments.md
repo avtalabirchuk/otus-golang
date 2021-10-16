@@ -12,3 +12,6 @@ docker run -d \
 ```
 ## postgres exec 
 `docker exec -it  postgres_db bash -c "psql -U calendar db_calendar"`
+
+## postgres migrations 
+`# cd ./migrations; goose postgres "host=127.0.0.1 user=calendar password=calendar dbname=db_calendar sslmode=disable" up`

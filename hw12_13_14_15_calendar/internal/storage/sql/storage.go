@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	// init db driver.
+	_ "github.com/jackc/pgx/v4/stdlib"
+
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage"
 )
 

@@ -14,20 +14,11 @@ import (
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/logger"
 )
 
-type responseWriter struct {
-	http.ResponseWriter
-	code int
-}
 type server struct {
 	app    app.App
 	logger logger.Logger
 	srv    *http.Server
 	router *mux.Router
-}
-
-func (w *responseWriter) WriteHeader(statusCode int) {
-	w.code = statusCode
-	w.ResponseWriter.WriteHeader(statusCode)
 }
 
 func newServer(app app.App, logger logger.Logger) Server {

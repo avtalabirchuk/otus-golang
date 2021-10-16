@@ -13,8 +13,7 @@ import (
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage"
-	memorystorage "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage/memory"
-	sqlstorage "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage/sql"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage/initstorage"
 )
 
 var configFile string
@@ -66,13 +65,8 @@ func main() {
 
 	logg.Info("starting calendar")
 
-	var db storage.Storage
-	if config.Database.Inmem {
-		db = memorystorage.New()
-	} else {
-		db = sqlstorage.New()
-	}
-	if err := db.Connect(mainCtx, config.Database.Connect); err != nil {
+	db, err := initstorage.New(mainCtx, config.Database.Inmem, config.Database.Connect)
+	if err != nil {
 		logg.Fatal(err)
 	}
 
