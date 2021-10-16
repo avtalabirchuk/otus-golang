@@ -20,6 +20,9 @@ func main() {
 	flag.Parse()
 	flag.Usage()
 	telnetArgs := flag.Args()
+	if len(telnetArgs) < 2 {
+		log.Fatal("Correct usage: telnet host port [--timeout=2s]")
+	}
 
 	host := telnetArgs[0]
 	port := telnetArgs[1]
@@ -42,6 +45,10 @@ func main() {
 
 	go func() {
 		client.Send()
+		err := client.Send()
+		if err != nil {
+			log.Println(err)
+		}
 		cancel()
 	}()
 
