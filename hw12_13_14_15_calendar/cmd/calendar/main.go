@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	confuguration "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/cmd/calendar/config"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/app"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/server/http"
@@ -53,7 +54,11 @@ func main() {
 	mainCtx, cancel := context.WithCancel(context.Background())
 	go watchSignals(cancel)
 
-	config, err := NewConfig(configFile)
+	// config, err := NewConfig(configFile)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	config, err := confuguration.NewConfig(configFile)
 	if err != nil {
 		log.Fatal(err)
 	}

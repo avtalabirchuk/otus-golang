@@ -16,10 +16,9 @@ func printVersion() {
 }
 
 func isVersionCommand() bool {
-	for _, name := range flag.Args() {
-		if name == "version" {
-			return true
-		}
+	args := flag.Args()
+	if len(args) != 0 && args[0] == "version" {
+		return true
 	}
 	return false
 }

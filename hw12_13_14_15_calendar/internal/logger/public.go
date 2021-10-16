@@ -46,6 +46,7 @@ func New(logLevel string, output io.Writer, fileName string) (Logger, error) {
 		if err != nil {
 			return result, fmt.Errorf("failed to open log file: %w", err)
 		}
+		defer file.Close()
 		log.SetOutput(file)
 	}
 

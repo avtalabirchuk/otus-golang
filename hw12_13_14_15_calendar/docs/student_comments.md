@@ -15,3 +15,6 @@ docker run -d \
 
 ## postgres migrations 
 `# cd ./migrations; goose postgres "host=127.0.0.1 user=calendar password=calendar dbname=db_calendar sslmode=disable" up`
+
+## todo
+[][create fix commit](https://github.com/avtalabirchuk/otus-golang/pull/16)

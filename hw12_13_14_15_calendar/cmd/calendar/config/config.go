@@ -1,4 +1,4 @@
-package main
+package confuguration
 
 import (
 	"errors"
@@ -18,6 +18,7 @@ type HTTPConf struct {
 	Port string
 }
 type DatabaseConf struct {
+	// TO DO change inmem to string
 	Inmem   bool
 	Connect string
 }

@@ -119,6 +119,7 @@ func (s *store) DeleteAll(ctx context.Context) error {
 }
 
 func (s *store) ListAll(ctx context.Context) ([]storage.Event, error) {
+	// TO DO change to operator BETWEEN
 	query := `
 		SELECT event_id, title, start, stop, description, user_id, notification
 		FROM event
@@ -128,6 +129,7 @@ func (s *store) ListAll(ctx context.Context) ([]storage.Event, error) {
 }
 
 func (s *store) ListDay(ctx context.Context, date time.Time) ([]storage.Event, error) {
+	// TO DO remove duplicate request text
 	year, month, day := date.Date()
 	query := `
 		SELECT event_id, title, start, stop, description, user_id, notification
@@ -139,6 +141,7 @@ func (s *store) ListDay(ctx context.Context, date time.Time) ([]storage.Event, e
 }
 
 func (s *store) ListWeek(ctx context.Context, date time.Time) ([]storage.Event, error) {
+	// TO DO remove duplicate request text
 	year, week := date.ISOWeek()
 	query := `
 		SELECT event_id, title, start, stop, description, user_id, notification
@@ -150,6 +153,7 @@ func (s *store) ListWeek(ctx context.Context, date time.Time) ([]storage.Event, 
 }
 
 func (s *store) ListMonth(ctx context.Context, date time.Time) ([]storage.Event, error) {
+	// TO DO remove duplicate request text
 	year, month, _ := date.Date()
 	query := `
 		SELECT event_id, title, start, stop, description, user_id, notification
