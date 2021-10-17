@@ -3,59 +3,95 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/app"
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	confuguration "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/cmd/calendar/config"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/app"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/server/http"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage/initstorage"
 )
 
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "", "Path to configuration file")
+}
+
+func watchSignals(cancel context.CancelFunc) {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	<-signals
+	cancel()
+}
+
+func shutDown(logg logger.Logger, server internalhttp.Server, db storage.Storage) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	if err := server.Stop(ctx); err != nil {
+		logg.Error(err)
+	}
+
+	if err := db.Close(ctx); err != nil {
+		logg.Error(err)
+	}
 }
 
 func main() {
 	flag.Parse()
 
-	if flag.Arg(0) == "version" {
+	if isVersionCommand() {
 		printVersion()
-		return
+		os.Exit(0)
+	}
+	mainCtx, cancel := context.WithCancel(context.Background())
+	go watchSignals(cancel)
+
+	// config, err := NewConfig(configFile)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	config, err := confuguration.NewConfig(configFile)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	config := NewConfig()
-	logg := logger.New(config.Logger.Level)
+	logg, err := logger.New(config.Logger.Level, nil, config.Logger.File)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	logg.Info("starting calendar")
 
-	server := internalhttp.NewServer(logg, calendar)
+	db, err := initstorage.New(mainCtx, config.Database.Inmem, config.Database.Connect)
+	if err != nil {
+		logg.Fatal(err)
+	}
 
-	ctx, cancel := signal.NotifyContext(context.Background(),
-		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer cancel()
+	calendar := app.New(logg, db)
 
+	server := internalhttp.NewServer(calendar, logg)
 	go func() {
-		<-ctx.Done()
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
-
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
+		err := server.Start(config.HTTP.Host + ":" + config.HTTP.Port)
+		if err != nil {
+			logg.Error(err)
+			cancel()
 		}
 	}()
 
-	logg.Info("calendar is running...")
+	logg.Info("callendar is Running...")
 
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
-		cancel()
-		os.Exit(1) //nolint:gocritic
-	}
+	<-mainCtx.Done()
+
+	logg.Info("stopping calendar")
+	cancel()
+	shutDown(logg, server, db)
+	logg.Info("calendar is stopped")
 }
