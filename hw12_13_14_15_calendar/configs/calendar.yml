@@ -1,0 +1,14 @@
+host: "localhost"
+port: 8082
+
+logLevel: "debug"
+logPath: "logs/calendar.log"
+
+repoType: "psql"
+
+dbHost: "localhost"
+dbPort: 5432
+dbName: "db_calendar"
+dbUser: "db_calendar_user"
+dbPass: "db_calendar_pass"
+dBItemsPerQuery: 50

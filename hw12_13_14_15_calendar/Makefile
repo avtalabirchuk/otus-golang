@@ -10,7 +10,7 @@ build:
 
 .PHONY: run
 run: build
-	$(BIN) -config ./configs/config.toml
+	$(BIN) -config configs/calendar.yml
 
 .PHONY: version
 version: build
@@ -31,3 +31,7 @@ install-lint-deps:
 .PHONY: lint
 lint: install-lint-deps
 	golangci-lint run ./...
+
+.PHONY: migrate
+migrate:
+	./scripts/migrations.sh
