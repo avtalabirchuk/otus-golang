@@ -21,17 +21,15 @@ func TestMemoryRepo(t *testing.T) {
 	t.Run("get day events", func(t *testing.T) {
 		r := NewMemoryRepo()
 
-		startDate1 := getDate(1, time.November)
-		startDate2 := getDate(2, time.November)
+		r.storage[1] = Event{ID: 1, UserID: 1, StartDate: getDate(1, time.November), EndDate: getDate(2, time.November)}
+		r.storage[2] = Event{ID: 2, UserID: 1, StartDate: getDate(1, time.November), EndDate: getDate(15, time.November)}
+		r.storage[3] = Event{ID: 3, UserID: 1, StartDate: getDate(3, time.November), EndDate: getDate(4, time.November)}
+		r.storage[4] = Event{ID: 4, UserID: 1, StartDate: getDate(15, time.November), EndDate: getDate(16, time.November)}
 
-		r.storage[1] = Event{ID: 1, UserID: 1, StartDate: startDate1}
-		r.storage[2] = Event{ID: 2, UserID: 1, StartDate: startDate2}
-		r.storage[3] = Event{ID: 3, UserID: 1, StartDate: startDate1}
-
-		result, err := r.GetDayEvents(startDate1)
+		result, err := r.GetDayEvents(getDate(3, time.November))
 		require.Nil(t, err)
 
-		require.Equal(t, result, []Event{r.storage[1], r.storage[3]})
+		require.Equal(t, result, []Event{r.storage[2], r.storage[3]})
 	})
 
 	t.Run("get week events", func(t *testing.T) {

@@ -42,10 +42,12 @@ func ConvertEventToProto(evt repository.Event) (*Event, error) {
 	}
 	result.StartDate = timestamppb.New(evt.StartDate)
 	result.EndDate = timestamppb.New(evt.EndDate)
-	if value, err := ConvertTimeToTimestamp(evt.NotifiedAt); err == nil {
-		result.NotifiedAt = value
-	} else {
-		return nil, err
+	if evt.NotifiedAt.Valid {
+		if value, err := ConvertTimeToTimestamp(evt.NotifiedAt); err == nil {
+			result.NotifiedAt = value
+		} else {
+			return nil, err
+		}
 	}
 	return result, nil
 }
