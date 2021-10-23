@@ -23,7 +23,7 @@ test:
 
 .PHONY: test-pq
 test-pq:
-	PQ_TEST="postgresql://calendar:calendar@localhost:5432/db_calendar" go test -v -count=1 -race -timeout=30s ./...
+	PQ_TEST="postgresql://db_calendar_user:db_calendar_pass@localhost:5432/db_calendar" go test -v -count=1 -race -timeout=30s ./...
 
 install-lint-deps:
 	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.37.0

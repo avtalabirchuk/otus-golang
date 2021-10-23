@@ -8,7 +8,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/calendar"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/app"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/config"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/logger"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/repository"
@@ -50,7 +50,7 @@ func main() {
 	}
 	defer repo.Close()
 
-	app, err := calendar.New(repo)
+	app, err := app.New(repo)
 	if err != nil {
 		fatal(err)
 	}
