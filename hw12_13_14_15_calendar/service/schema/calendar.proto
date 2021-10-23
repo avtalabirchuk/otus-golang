@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+option go_package=".;server";
+
+message Event {
+ int64 ID = 1;
+ int64 UserID = 2;
+ string Title = 3;
+ string Description = 4;
+ google.protobuf.Timestamp StartDate = 5;
+ google.protobuf.Timestamp EndDate = 6;
+ google.protobuf.Timestamp NotifiedAt = 7;
+}
+
+message EventsResponse {
+  repeated Event events = 1;
+}
+
+enum QueryRangeType {
+  UNKNOWN = 0;
+  DAY = 1;
+  WEEK = 2;
+  MONTH = 3;
+}
+
+message QueryEventsRequest {
+  QueryRangeType type = 1;
+  int64 ts = 2;
+}
+
+message UpdateEventRequest {
+  int64 id = 1;
+  Event event = 2;
+}
+
+message DeleteEventRequest {
+  int64 id = 1;
+}
+
+service Calendar {
+  rpc GetEvents (QueryEventsRequest) returns (EventsResponse) {
+    option (google.api.http) = {
+      get: "/events/{type}/{ts}"
+    };
+  }
+
+  rpc CreateEvent (Event) returns (Event) {
+    option (google.api.http) = {
+      post: "/events",
+      body: "*",
+    };
+  }
+  rpc UpdateEvent (UpdateEventRequest) returns (Event) {
+    option (google.api.http) = {
+      put: "/events/{id}",
+      body: "*",
+    };
+  }
+  rpc DeleteEvent (DeleteEventRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/events/{id}"
+    };
+  }
+}

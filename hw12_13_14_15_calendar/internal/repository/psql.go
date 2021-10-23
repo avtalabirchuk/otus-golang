@@ -2,16 +2,18 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/jmoiron/sqlx"
-
-	// is used for init postgres.
-	_ "github.com/lib/pq"
+	"github.com/rs/zerolog/log"
 
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/config"
+	// is used for init postgres.
+	_ "github.com/lib/pq"
 )
 
 var ErrDBOpen = errors.New("database open error")
@@ -19,16 +21,17 @@ var ErrDBOpen = errors.New("database open error")
 type PSQLRepo struct {
 	db            *sqlx.DB
 	itemsPerQuery int
+	validator     *validator.Validate
 }
 
 var insertQs = `INSERT INTO events
-(user_id, title, description, start_date, start_time, end_date, end_time, notified_at)
+(user_id, title, description, start_date, end_date, notified_at)
 VALUES
-(:user_id, :title, :description, :start_date, :start_time, :end_date, :end_time, :notified_at)
+(:user_id, :title, :description, :start_date, :end_date, :notified_at)
 RETURNING id`
 
 var updateQs = `UPDATE events
-	SET (title, description, start_date, start_time, end_date, end_time, notified_at) = (:title, :description, :start_date, :start_time, :end_date, :end_time, :notified_at)
+	SET (title, description, start_date, end_date, notified_at) = (:title, :description, :start_date, :end_date, :notified_at)
 	WHERE id = :id
 	RETURNING id`
 
@@ -57,17 +60,20 @@ func (r *PSQLRepo) Close() error {
 }
 
 func NewPSQLRepo() *PSQLRepo {
-	return &PSQLRepo{itemsPerQuery: 100}
+	return &PSQLRepo{itemsPerQuery: 100, validator: NewEventValidator()}
 }
 
-func (r *PSQLRepo) getEventsBetween(startDate time.Time, endDate time.Time) (result []Event, err error) {
-	query := "SELECT * FROM events WHERE start_date >= $1 or end_date <= $2 ORDER BY start_date ASC LIMIT $3"
-	err = r.db.Select(&result, query, startDate, endDate, r.itemsPerQuery)
+func (r *PSQLRepo) getEventsBetween(startPeriod time.Time, endPeriod time.Time) (result []Event, err error) {
+	query := "SELECT * FROM events WHERE (start_date <= $1 and end_date >= $1) or (start_date <= $2 and end_date >= $2) or (start_date >= $1 and end_date <= $2) ORDER BY start_date ASC LIMIT $3"
+	err = r.db.Select(&result, query, startPeriod, endPeriod, r.itemsPerQuery)
 	return
 }
 
 func (r *PSQLRepo) getEventByID(id int64) (result Event, err error) {
 	err = r.db.Get(&result, "SELECT * FROM events WHERE id = $1", id)
+	if err != nil {
+		log.Debug().Msgf("[DB] getEventByID Err %d, %+v, %s", id, result, err)
+	}
 	return
 }
 
@@ -88,33 +94,34 @@ func (r *PSQLRepo) GetMonthEvents(date time.Time) (result []Event, err error) {
 func (r *PSQLRepo) DeleteEvent(id int64) (err error) {
 	result, err := r.db.Exec(deleteQs, id)
 	if err != nil {
-		return fmt.Errorf("%s: %w", ErrEventDelete, err)
+		return
 	}
 	n, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("%s: %w", ErrEventDelete, err)
+		return
 	}
 	if n == 0 {
-		err = ErrEventNotFound
+		err = sql.ErrNoRows
 	}
 	return
 }
 
 func (r *PSQLRepo) CreateEvent(data Event) (event Event, err error) {
+	err = r.validator.Struct(data)
+	if err != nil {
+		return
+	}
 	stmt, err := r.db.PrepareNamed(insertQs)
 	if err != nil {
-		err = fmt.Errorf("%s: %w", ErrEventCreate, err)
 		return
 	}
 	row := stmt.QueryRow(data)
 	if err = row.Err(); err != nil {
-		err = fmt.Errorf("%s: %w", ErrEventCreate, err)
 		return
 	}
 	evt := Event{}
 	err = row.StructScan(&evt)
 	if err != nil {
-		err = fmt.Errorf("%s: %w", ErrEventCreate, err)
 		return
 	}
 	if evt.ID == 0 {
@@ -125,26 +132,30 @@ func (r *PSQLRepo) CreateEvent(data Event) (event Event, err error) {
 }
 
 func (r *PSQLRepo) UpdateEvent(id int64, data Event) (event Event, err error) {
-	data.ID = id
+	// Fetch Event from DB
+	event, err = r.getEventByID(id)
+	if err != nil {
+		return
+	}
+	// Merge data with event
+	err = MergeEvents(&event, data)
+	if err != nil {
+		return
+	}
+	log.Debug().Msgf("Merged Object %+v", event)
+	// Validate received object
+	err = r.validator.Struct(event)
+	if err != nil {
+		return
+	}
+	// Validate received object
 	stmt, err := r.db.PrepareNamed(updateQs)
 	if err != nil {
-		err = fmt.Errorf("%s: %w", ErrEventUpdate, err)
 		return
 	}
-	row := stmt.QueryRow(data)
+	row := stmt.QueryRow(event)
 	if err = row.Err(); err != nil {
-		err = fmt.Errorf("%s: %w", ErrEventUpdate, err)
 		return
 	}
-	evt := Event{}
-	err = row.StructScan(&evt)
-	if err != nil {
-		err = fmt.Errorf("%s: %w", ErrEventCreate, err)
-		return
-	}
-	if evt.ID == 0 {
-		err = ErrEventNotFound
-		return
-	}
-	return r.getEventByID(evt.ID)
+	return r.getEventByID(id)
 }

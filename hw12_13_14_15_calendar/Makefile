@@ -3,6 +3,7 @@ DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
+cdir = $(shell pwd)
 
 .PHONY: build
 build:
@@ -35,3 +36,15 @@ lint: install-lint-deps
 .PHONY: migrate
 migrate:
 	./scripts/migrations.sh
+
+.PHONY: generate
+generate:
+	protoc \
+	-I /usr/local/include \
+	-I ${cdir}/service/schema \
+	--go_out=plugins=grpc:${cdir}/service/server \
+	--grpc-gateway_out=logtostderr=true:${cdir}/service/server \
+	${cdir}/service/schema/calendar.proto
+
+
+# protoc -I /usr/local/include -I ${cdir}/service/grpc/schema --go_out=plugins=grpc:${cdir}/service/grpc/server ${cdir}/service/grpc/schema/calendar.proto

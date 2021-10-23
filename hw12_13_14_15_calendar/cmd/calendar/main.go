@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 
 	"github.com/rs/zerolog/log"
 
@@ -36,26 +35,36 @@ func main() {
 		fatal(err)
 	}
 	log.Debug().Msgf("Config inited %+v", cfg)
-	err = logger.Init(cfg)
-	if err != nil {
+
+	if err = logger.Init(cfg); err != nil {
 		fatal(err)
 	}
+
 	repo := repository.New(cfg.RepoType)
 	if repo == nil {
 		fatal(ErrUnSupportedRepoType)
 	}
-	err = repo.Connect(ctx, cfg)
-	if err != nil {
+
+	if err = repo.Connect(ctx, cfg); err != nil {
 		fatal(err)
 	}
 	defer repo.Close()
 
-	app, err := app.New(repo)
+	app, err := app.New(cfg, repo)
 	if err != nil {
 		fatal(err)
 	}
-	err = app.Run(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
-	if err != nil {
-		fatal(err)
+
+	errCh := make(chan error)
+	doneCh := make(chan bool)
+	go app.Run(&errCh, &doneCh)
+
+	for {
+		select {
+		case <-doneCh:
+			return
+		case err := <-errCh:
+			log.Error().Msgf("%s", err)
+		}
 	}
 }

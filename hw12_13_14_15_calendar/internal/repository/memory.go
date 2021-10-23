@@ -5,8 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/imdario/mergo"
-
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/config"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/utils"
 )
@@ -89,7 +87,7 @@ func (r *MemoryRepo) UpdateEvent(id int64, data Event) (event Event, err error) 
 	if !ok {
 		return Event{}, ErrEventNotFound
 	}
-	err = mergo.Merge(&event, data, mergo.WithOverride)
+	err = MergeEvents(&event, data)
 	r.storage[id] = event
 	return
 }

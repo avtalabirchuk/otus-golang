@@ -22,6 +22,8 @@ type Config struct {
 	DBPass          string `yaml:"dbPass" config:"required"`
 	DBMaxConn       int    `yaml:"dBMaxConn"`
 	DBItemsPerQuery int    `yaml:"dBItemsPerQuery"`
+	GRPCAddress     string `yaml:"grpcAddress"`
+	HTTPAddress     string `yaml:"httpAddress"`
 }
 
 var ErrConfigPath = errors.New("Config path is not provided")

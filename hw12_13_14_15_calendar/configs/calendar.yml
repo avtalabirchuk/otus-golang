@@ -12,3 +12,6 @@ dbName: "db_calendar"
 dbUser: "db_calendar_user"
 dbPass: "db_calendar_pass"
 dBItemsPerQuery: 50
+
+grpcAddress: "localhost:50051"
+httpAddress: "localhost:50052"
