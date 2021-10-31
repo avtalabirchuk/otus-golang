@@ -30,4 +30,4 @@ linters:
     - wrapcheck
     - forbidigo
     - gci
-    - nilerr
+    # - nilerr
