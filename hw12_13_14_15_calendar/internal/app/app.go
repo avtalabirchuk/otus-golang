@@ -1,90 +1,45 @@
 package app
 
 import (
-	"context"
-	"time"
+	"errors"
+	"sync"
 
-	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/logger"
-	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/config"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/repository"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/service"
 )
 
-type app struct {
-	logger  logger.Logger
-	storage storage.Storage
+var ErrUnrecognizedServiceType = errors.New("cannot create service, because type was not recognized. Supported types: http, grpc")
+
+type App struct {
+	r repository.Base
+	c *config.Config
 }
 
-func (a *app) CreateEvent(ctx context.Context, userID int, title, desc string, start, stop time.Time, notif *time.Duration) (id int, err error) {
-	if userID == 0 {
-		err = ErrNoUserID
-		return
-	}
-	if title == "" {
-		err = ErrEmptyTitle
-		return
-	}
-	if start.After(stop) {
-		start, stop = stop, start
-	}
-	if time.Now().After(start) {
-		err = ErrStartInPast
-		return
-	}
-	isBusy, err := a.storage.IsTimeBusy(ctx, start, stop, 0)
-	if err != nil {
-		return
-	}
-	if isBusy {
-		err = ErrDateBusy
-		return
-	}
-
-	return a.storage.Create(ctx, storage.Event{
-		Title:        title,
-		Start:        start,
-		Stop:         stop,
-		Description:  desc,
-		UserID:       userID,
-		Notification: notif,
-	})
+func New(c *config.Config, r repository.Base) (*App, error) {
+	return &App{c: c, r: r}, nil
 }
 
-func (a *app) UpdateEvent(ctx context.Context, id int, change storage.Event) error {
-	if change.Title == "" {
-		return ErrEmptyTitle
-	}
-	if change.Start.After(change.Stop) {
-		change.Start, change.Stop = change.Stop, change.Start
-	}
-	if time.Now().After(change.Start) {
-		return ErrStartInPast
-	}
-	isBusy, err := a.storage.IsTimeBusy(ctx, change.Start, change.Stop, id)
-	if err != nil {
-		return err
-	}
-	if isBusy {
-		return ErrDateBusy
-	}
+func (app *App) Run(errCh *chan error, doneCh *chan bool) {
+	s := service.New(app.r)
 
-	return a.storage.Update(ctx, id, change)
-}
-
-func (a *app) DeleteEvent(ctx context.Context, id int) error {
-	return a.storage.Delete(ctx, id)
-}
-
-func (a *app) ListAllEvents(ctx context.Context) ([]storage.Event, error) {
-	return a.storage.ListAll(ctx)
-}
-
-func (a *app) ListDayEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
-	return a.storage.ListDay(ctx, date)
-}
-
-func (a *app) ListWeekEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
-	return a.storage.ListWeek(ctx, date)
-}
-
-func (a *app) ListMonthEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
-	return a.storage.ListMonth(ctx, date)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if app.c.GRPCAddress != "" {
+			*errCh <- s.RunGRPC(app.c.GRPCAddress)
+		}
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if app.c.HTTPAddress != "" && app.c.GRPCAddress != "" {
+			*errCh <- s.RunHTTP(app.c.GRPCAddress, app.c.HTTPAddress)
+		}
+	}()
+	go func() {
+		wg.Wait()
+		close(*doneCh)
+	}()
 }

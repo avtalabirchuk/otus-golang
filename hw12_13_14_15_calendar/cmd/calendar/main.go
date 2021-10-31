@@ -2,96 +2,69 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	confuguration "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/cmd/calendar/config"
+	"github.com/rs/zerolog/log"
+
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/app"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/config"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/server/http"
-	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage"
-	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/storage/initstorage"
+	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/repository"
 )
 
-var configFile string
+var ErrUnSupportedRepoType = errors.New("unsupported repository type")
+
+var cfgPath string
+
+func fatal(err error) {
+	log.Fatal().Err(err).Msg("Application cannot start")
+}
 
 func init() {
-	flag.StringVar(&configFile, "config", "", "Path to configuration file")
-}
-
-func watchSignals(cancel context.CancelFunc) {
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
-
-	<-signals
-	cancel()
-}
-
-func shutDown(logg logger.Logger, server internalhttp.Server, db storage.Storage) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	if err := server.Stop(ctx); err != nil {
-		logg.Error(err)
-	}
-
-	if err := db.Close(ctx); err != nil {
-		logg.Error(err)
-	}
+	flag.StringVar(&cfgPath, "config", "", "Calendar config")
 }
 
 func main() {
 	flag.Parse()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	if isVersionCommand() {
-		printVersion()
-		os.Exit(0)
-	}
-	mainCtx, cancel := context.WithCancel(context.Background())
-	go watchSignals(cancel)
-
-	// config, err := NewConfig(configFile)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	config, err := confuguration.NewConfig(configFile)
+	cfg, err := config.Read(cfgPath)
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
+	}
+	log.Debug().Msgf("Config inited %+v", cfg)
+
+	if err = logger.Init(cfg); err != nil {
+		fatal(err)
 	}
 
-	logg, err := logger.New(config.Logger.Level, nil, config.Logger.File)
+	repo := repository.New(cfg.RepoType)
+	if repo == nil {
+		fatal(ErrUnSupportedRepoType)
+	}
+
+	if err = repo.Connect(ctx, cfg); err != nil {
+		fatal(err)
+	}
+	defer repo.Close()
+
+	app, err := app.New(cfg, repo)
 	if err != nil {
-		log.Fatal(err)
+		fatal(err)
 	}
 
-	logg.Info("starting calendar")
+	errCh := make(chan error)
+	doneCh := make(chan bool)
+	go app.Run(&errCh, &doneCh)
 
-	db, err := initstorage.New(mainCtx, config.Database.Inmem, config.Database.Connect)
-	if err != nil {
-		logg.Fatal(err)
-	}
-
-	calendar := app.New(logg, db)
-
-	server := internalhttp.NewServer(calendar, logg)
-	go func() {
-		err := server.Start(config.HTTP.Host + ":" + config.HTTP.Port)
-		if err != nil {
-			logg.Error(err)
-			cancel()
+	for {
+		select {
+		case <-doneCh:
+			return
+		case err := <-errCh:
+			log.Error().Msgf("%s", err)
 		}
-	}()
-
-	logg.Info("callendar is Running...")
-
-	<-mainCtx.Done()
-
-	logg.Info("stopping calendar")
-	cancel()
-	shutDown(logg, server, db)
-	logg.Info("calendar is stopped")
+	}
 }

@@ -12,12 +12,12 @@ linters:
   disable-all: false
   enable-all: true
   disable:
-    # - exhaustive
+    # - forcetypeassert
     - exhaustivestruct
     - goerr113
     - gochecknoglobals
     - gochecknoinits
-    # - godox
+    - godox
     - gofumpt
     - gomnd
     - lll
@@ -28,3 +28,4 @@ linters:
     - wsl
     - wrapcheck
     - forbidigo
+    - gci
