@@ -80,6 +80,7 @@ func (c *Connector) Reconnect() error {
 		return ErrMaxConnectionAttempts
 	}
 	log.Info().Msg("Connection to queue has been failed. Trying to reconnect...")
+	// nolint:durationcheck
 	time.Sleep(time.Duration(c.reconnectTimeoutMs) * time.Millisecond)
 	if err := c.Connect(); err != nil {
 		return err

@@ -46,6 +46,7 @@ func processEvents(repo repository.Stats, msgCh chan<- []byte) (err error) {
 }
 
 func (app *App) scheduleEvents(msgCh chan []byte, errCh chan<- error) error {
+	// nolint:durationcheck
 	ticker := time.NewTicker(time.Duration(app.scanTimeoutMs) * time.Millisecond)
 	for {
 		select {
