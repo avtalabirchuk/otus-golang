@@ -41,16 +41,18 @@ func ConvertEventToProto(evt repository.Event) (*Event, error) {
 		Title:       evt.Title,
 		NotifiedFor: int64(evt.NotifiedFor),
 	}
-	if value, err := ptypes.TimestampProto(evt.StartDate); err != nil {
+	value, err := ptypes.TimestampProto(evt.StartDate)
+	if err != nil {
 		return nil, err
-	} else {
-		result.StartDate = value
 	}
-	if value, err := ptypes.TimestampProto(evt.EndDate); err != nil {
+	result.StartDate = value
+
+	value, err = ptypes.TimestampProto(evt.EndDate)
+	if err != nil {
 		return nil, err
-	} else {
-		result.EndDate = value
 	}
+	result.EndDate = value
+
 	return result, nil
 }
 

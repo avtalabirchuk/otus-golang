@@ -17,7 +17,7 @@ type dbConnector interface {
 	Close() error
 }
 
-type Base interface {
+type CRUD interface {
 	GetDayEvents(time.Time) ([]Event, error)
 	GetWeekEvents(time.Time) ([]Event, error)
 	GetMonthEvents(time.Time) ([]Event, error)
@@ -58,8 +58,8 @@ func newRepo(repoType string, args ...interface{}) interface{} {
 	return nil
 }
 
-func New(repoType string, args ...interface{}) Base {
-	repo, ok := newRepo(repoType, args...).(Base)
+func NewCRUD(repoType string, args ...interface{}) CRUD {
+	repo, ok := newRepo(repoType, args...).(CRUD)
 	if !ok {
 		return nil
 	}

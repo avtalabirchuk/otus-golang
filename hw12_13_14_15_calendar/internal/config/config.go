@@ -9,7 +9,7 @@ import (
 	"github.com/heetch/confita/backend/file"
 )
 
-type Config struct {
+type Calendar struct {
 	Host        string    `yaml:"host" config:"required"`
 	Port        int       `yaml:"port" config:"required"`
 	GRPCAddress string    `yaml:"grpcAddress"`
@@ -30,13 +30,13 @@ type Sender struct {
 	QueueConfig QueueConfig `yaml:"queueConfig"`
 }
 
-var ErrConfigPath = errors.New("Config path is not provided")
+var ErrConfigPath = errors.New("config path is not provided")
 
-func Read(fpath string) (config *Config, err error) {
+func NewCalendar(fpath string) (config *Calendar, err error) {
 	if fpath == "" {
 		return nil, ErrConfigPath
 	}
-	config = &Config{
+	config = &Calendar{
 		Host:      "localhost",
 		Port:      8081,
 		LogConfig: defaultLogConfig(),

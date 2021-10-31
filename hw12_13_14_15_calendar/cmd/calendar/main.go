@@ -27,7 +27,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg, err := config.Read(cfgPath)
+	cfg, err := config.NewCalendar(cfgPath)
 	if err != nil {
 		fatal(err)
 	}
@@ -37,7 +37,7 @@ func main() {
 		fatal(err)
 	}
 
-	repo := repository.New(cfg.DBConfig.RepoType, cfg.DBConfig.ItemsPerQuery, cfg.DBConfig.MaxConn)
+	repo := repository.NewCRUD(cfg.DBConfig.RepoType, cfg.DBConfig.ItemsPerQuery, cfg.DBConfig.MaxConn)
 	if repo == nil {
 		fatal(repository.ErrUnSupportedRepoType)
 	}

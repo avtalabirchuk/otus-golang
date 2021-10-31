@@ -34,16 +34,16 @@ func (c *Connector) Connect() error {
 	var err error
 
 	if c.conn, err = amqp.Dial(c.uri); err != nil {
-		return fmt.Errorf("Dial: %s", err)
+		return fmt.Errorf("dial: %s", err)
 	}
 
 	if c.channel, err = c.conn.Channel(); err != nil {
-		return fmt.Errorf("Channel: %s", err)
+		return fmt.Errorf("channel: %s", err)
 	}
 
 	go func() {
 		log.Printf("closing: %s", <-c.conn.NotifyClose(make(chan *amqp.Error)))
-		c.done <- errors.New("channel Closed")
+		c.done <- errors.New("channel closed")
 	}()
 
 	if err = c.channel.ExchangeDeclare(
@@ -55,7 +55,7 @@ func (c *Connector) Connect() error {
 		false,
 		nil,
 	); err != nil {
-		return fmt.Errorf("Exchange Declare: %s", err)
+		return fmt.Errorf("exchange declare: %s", err)
 	}
 
 	return nil

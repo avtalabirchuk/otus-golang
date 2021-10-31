@@ -41,7 +41,7 @@ func (p *Producer) Handle(msgCh <-chan []byte, errCh chan<- error) error {
 		nil,
 	)
 	if err != nil {
-		return fmt.Errorf("Queue Declare: %s", err)
+		return fmt.Errorf("queue declare: %s", err)
 	}
 
 	go func() {

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/queue"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/repository"
 )
@@ -22,6 +24,22 @@ func New(r repository.Stats, p *queue.Producer, scanTimeout int) *App {
 	return &App{r: r, p: p, scanTimeout: scanTimeout}
 }
 
+func processEvents(repo repository.Stats, msgCh chan<- []byte) (err error) {
+	events, err := repo.GetCurrentEvents()
+	if err != nil {
+		return fmt.Errorf("GetCurrentEvents: %v", err)
+	}
+	bts, err := json.Marshal(events)
+	if err != nil {
+		return
+	}
+	if err := repo.MarkEventsAsProcessing(&events); err != nil {
+		return fmt.Errorf("MarkEventsAsProcessing: %v", err)
+	}
+	msgCh <- bts
+	return nil
+}
+
 func (app *App) Run(doneCh <-chan error) error {
 	msgCh := make(chan []byte)
 	errCh := make(chan error)
@@ -30,11 +48,8 @@ func (app *App) Run(doneCh <-chan error) error {
 	}
 	ticker := time.NewTicker(time.Duration(app.scanTimeout) * time.Second)
 	go func() {
-		for {
-			select {
-			case b := <-errCh:
-				fmt.Printf("ERRRR: %s\n", b)
-			}
+		for b := range errCh {
+			log.Error().Msgf("ERROR: %s\n", b)
 		}
 	}()
 	for {
@@ -42,21 +57,18 @@ func (app *App) Run(doneCh <-chan error) error {
 		case <-doneCh:
 			return nil
 		case <-ticker.C:
-			events, err := app.r.GetCurrentEvents()
-			if err != nil {
-				errCh <- err
-			} else {
-				b, err := json.Marshal(events)
+			go func() {
+				err := processEvents(app.r, msgCh)
 				if err != nil {
 					errCh <- err
-				} else {
-					msgCh <- b
-					// err := app.r.MarkEventsAsProcessing(&events)
-					// if err != nil {
-					// 	errCh <- err
-					// }
 				}
-			}
+			}()
+			go func() {
+				err := app.r.DeleteObsoleteEvents()
+				if err != nil {
+					errCh <- fmt.Errorf("DeleteObsoleteEvents: %v", err)
+				}
+			}()
 		}
 	}
 }

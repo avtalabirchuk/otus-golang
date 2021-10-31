@@ -41,12 +41,12 @@ func (c *Consumer) announceQueue() (<-chan amqp.Delivery, error) {
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Queue Declare: %s", err)
+		return nil, fmt.Errorf("queue declare: %s", err)
 	}
 
 	err = channel.Qos(c.qosPrefetchCount, 0, false)
 	if err != nil {
-		return nil, fmt.Errorf("Error setting qos: %s", err)
+		return nil, fmt.Errorf("error setting qos: %s", err)
 	}
 
 	if err = channel.QueueBind(
@@ -56,7 +56,7 @@ func (c *Consumer) announceQueue() (<-chan amqp.Delivery, error) {
 		false,
 		nil,
 	); err != nil {
-		return nil, fmt.Errorf("Queue Bind: %s", err)
+		return nil, fmt.Errorf("queue bind: %s", err)
 	}
 
 	msgs, err := channel.Consume(
@@ -69,7 +69,7 @@ func (c *Consumer) announceQueue() (<-chan amqp.Delivery, error) {
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Queue Consume: %s", err)
+		return nil, fmt.Errorf("queue consume: %s", err)
 	}
 
 	return msgs, nil
@@ -78,22 +78,22 @@ func (c *Consumer) announceQueue() (<-chan amqp.Delivery, error) {
 func (c *Consumer) Handle(fn func(<-chan amqp.Delivery)) error {
 	var err error
 	if err = c.connector.Connect(); err != nil {
-		return fmt.Errorf("Error: %v", err)
+		return fmt.Errorf("error: %v", err)
 	}
 	msgs, err := c.announceQueue()
 	if err != nil {
-		return fmt.Errorf("Error: %v", err)
+		return fmt.Errorf("error: %v", err)
 	}
 
 	for {
 		go fn(msgs)
-
-		if <-c.done != nil {
-			// msgs, err = c.reConnect()
-			// if err != nil {
-			// 	return fmt.Errorf("Reconnecting Error: %s", err)
-			// }
-		}
-		fmt.Println("Reconnected... possibly")
+		// TODO: Implement reconnecting
+		// if <-c.done != nil {
+		// msgs, err = c.reConnect()
+		// if err != nil {
+		// 	return fmt.Errorf("Reconnecting Error: %s", err)
+		// }
+		// }
+		// fmt.Println("Reconnected... possibly")
 	}
 }

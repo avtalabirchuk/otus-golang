@@ -25,9 +25,9 @@ type PSQLRepo struct {
 }
 
 var selectCurrentEventsQs = `SELECT e.* from events e join events_status es on e.id = es.event_id
-WHERE DATE_PART('day', start_date::timestamp - NOW()) <= e.notified_for and es.status = 'New';`
+WHERE DATE_PART('day', start_date::timestamp - NOW()) <= e.notified_for and e.end_date > NOW() and es.status = 'New';`
 
-var selectObsoleteEventsQs = `SELECT id FROM events WHERE DATE_PART('year', end_date::timestamp - NOW()) >= 1`
+var selectObsoleteEventsQs = `SELECT id FROM events WHERE DATE_PART('year', NOW()) - DATE_PART('year', end_date::timestamp) >= 1`
 
 var insertQs = `INSERT INTO events
 (user_id, title, description, start_date, end_date, notified_for)
@@ -143,6 +143,10 @@ func (r *PSQLRepo) CreateEvent(data Event) (event Event, err error) {
 		return
 	}
 	stmt, err := tx.PrepareNamed(insertQs)
+	if err != nil {
+		return
+	}
+
 	row := stmt.QueryRow(data)
 	if err = row.Err(); err != nil {
 		return
@@ -152,6 +156,7 @@ func (r *PSQLRepo) CreateEvent(data Event) (event Event, err error) {
 	if err != nil {
 		return
 	}
+
 	if evt.ID == 0 {
 		err = ErrEventNotFound
 		return
@@ -160,6 +165,7 @@ func (r *PSQLRepo) CreateEvent(data Event) (event Event, err error) {
 	if err != nil {
 		return
 	}
+
 	if err := tx.Commit(); err != nil {
 		return evt, err
 	}
@@ -201,12 +207,12 @@ func (r *PSQLRepo) GetCurrentEvents() (result []Event, err error) {
 }
 
 func (r *PSQLRepo) processEvents(events *[]Event, queryString string, status string) error {
-	var ids []int64
 	if len(*events) == 0 {
 		return nil
 	}
-	for _, el := range *events {
-		ids = append(ids, el.ID)
+	ids := make([]int64, len(*events))
+	for i, el := range *events {
+		ids[i] = el.ID
 	}
 	arg := map[string]interface{}{
 		"ids":    ids,
@@ -222,6 +228,11 @@ func (r *PSQLRepo) processEvents(events *[]Event, queryString string, status str
 	}
 	query = r.db.Rebind(query)
 	row, err := r.db.Queryx(query, args...)
+	if err != nil {
+		return err
+	}
+	defer row.Close()
+
 	if err != nil {
 		return err
 	}
@@ -249,12 +260,9 @@ func (r *PSQLRepo) DeleteObsoleteEvents() (err error) {
 	if err != nil {
 		return
 	}
-	n, err := result.RowsAffected()
+	_, err = result.RowsAffected()
 	if err != nil {
 		return
-	}
-	if n == 0 {
-		err = sql.ErrNoRows
 	}
 	if err := tx.Commit(); err != nil {
 		return err

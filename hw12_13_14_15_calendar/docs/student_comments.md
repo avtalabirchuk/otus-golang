@@ -6,9 +6,18 @@ docker run -d \
     -e POSTGRES_USER=db_calendar_user \
     -e POSTGRES_DB=db_calendar \
     -e PGDATA=/var/lib/postgresql/data/pgdata \
-    -d -p 5432:5432 \
+    -p 5432:5432 \
     -v /Users/andrey.talabirchuk/golang/otus-golang/hw12_13_14_15_calendar/database:/var/lib/postgresql/data \
     postgres:14.0
+```
+## rabbitmq start
+```
+docker run -d \
+    --name rabbitmq \
+    --hostname my-rabbit \
+    -p 15672:15672 \
+    -p 5672:5672 \
+    rabbitmq:3.9-management
 ```
 ## postgres exec 
 `docker exec -it  postgres_db bash -c "psql -U db_calendar_user db_calendar"`

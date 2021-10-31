@@ -29,7 +29,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg, err := config.NewSender(cfgPath)
+	cfg, err := config.NewScheduler(cfgPath)
 	if err != nil {
 		fatal(err)
 	}

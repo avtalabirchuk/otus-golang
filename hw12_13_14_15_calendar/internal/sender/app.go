@@ -24,9 +24,15 @@ func New(c *queue.Consumer, scanTimeout int) *App {
 	return &App{c: c, scanTimeout: scanTimeout}
 }
 
-func (app *App) Send(events *[]repository.Event) {
-	for _, event := range *events {
-		fmt.Printf("[SEND] Event %s starts at %s, ends at %s\n", event.Title, event.StartDate.Format(time.RFC3339), event.EndDate.Format(time.RFC3339))
+func processEvents(msg []byte) {
+	var events []repository.Event
+	err := json.Unmarshal(msg, &events)
+	if err != nil {
+		log.Error().Msgf("%s: %s", ErrDecodeIncomingMessage, err)
+	} else {
+		for _, event := range events {
+			fmt.Printf("[SEND] Event %s starts at %s, ends at %s\n", event.Title, event.StartDate.Format(time.RFC3339), event.EndDate.Format(time.RFC3339))
+		}
 	}
 }
 
@@ -37,13 +43,7 @@ func (app *App) Run(doneCh <-chan error) error {
 			case <-doneCh:
 				return
 			case msg := <-msgCh:
-				var events []repository.Event
-				err := json.Unmarshal(msg.Body, &events)
-				if err != nil {
-					log.Error().Msgf("%s: %s", ErrDecodeIncomingMessage, err)
-				} else {
-					app.Send(&events)
-				}
+				processEvents(msg.Body)
 			}
 		}
 	}
