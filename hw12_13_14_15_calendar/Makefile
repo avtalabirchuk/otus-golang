@@ -7,6 +7,7 @@ cdir = $(shell pwd)
 
 .PHONY: build
 build:
+	mkdir -p bin
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./...
 
 launch:
