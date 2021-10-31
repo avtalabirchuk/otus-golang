@@ -31,8 +31,7 @@ func New(r repository.CRUD) *Service {
 
 func processEvents(repo repository.CRUD, query *QueryEventsRequest) (events []repository.Event, err error) {
 	startDate := time.Now()
-	ts := query.GetTs()
-	if ts != 0 {
+	if ts := query.GetTs(); ts != 0 {
 		startDate = time.Unix(ts, 0)
 		if err != nil {
 			return nil, ErrIncomingTimeStampError

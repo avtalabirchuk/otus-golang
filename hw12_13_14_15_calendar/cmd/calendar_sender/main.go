@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"strconv"
 
 	"github.com/rs/zerolog/log"
@@ -35,21 +36,17 @@ func main() {
 	}
 
 	qCfg := cfg.QueueConfig
-	done := make(chan error)
 
-	queueURL := queue.GetRabbitMQURL(qCfg.User, qCfg.Pass, qCfg.Host, strconv.Itoa(qCfg.Port))
 	consumer := queue.NewConsumer(
-		queueURL,
-		qCfg.QueueName,
+		fmt.Sprintf("amqp://%s:%s@%s:%s/", qCfg.User, qCfg.Pass, qCfg.Host, strconv.Itoa(qCfg.Port)),
 		qCfg.QueueName,
 		qCfg.ExchangeType,
-		qCfg.QueueName,
-		qCfg.QueueName,
 		qCfg.QosPrefetchCount,
-		done,
+		qCfg.MaxReconnectAttempts,
+		qCfg.ReconnectTimeoutMs,
 	)
-	app := sender.New(consumer, qCfg.ScanTimeout)
-	if err := app.Run(done); err != nil {
+	app := sender.New(consumer, qCfg.ScanTimeoutMs)
+	if err := app.Run(); err != nil {
 		fatal(err)
 	}
 }

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/repository"
 )
@@ -30,7 +30,7 @@ func ConvertTimeToTimestamp(ntime sql.NullTime) (result *timestamp.Timestamp, er
 		err = ErrInvalidNullTime
 		return
 	}
-	return ptypes.TimestampProto(tvalue)
+	return timestamppb.New(tvalue), nil
 }
 
 // Didn't want to use reflection.
@@ -41,17 +41,8 @@ func ConvertEventToProto(evt repository.Event) (*Event, error) {
 		Title:       evt.Title,
 		NotifiedFor: int64(evt.NotifiedFor),
 	}
-	value, err := ptypes.TimestampProto(evt.StartDate)
-	if err != nil {
-		return nil, err
-	}
-	result.StartDate = value
-
-	value, err = ptypes.TimestampProto(evt.EndDate)
-	if err != nil {
-		return nil, err
-	}
-	result.EndDate = value
+	result.StartDate = timestamppb.New(evt.StartDate)
+	result.EndDate = timestamppb.New(evt.EndDate)
 
 	return result, nil
 }

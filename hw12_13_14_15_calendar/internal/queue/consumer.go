@@ -3,6 +3,7 @@ package queue
 import (
 	"fmt"
 
+	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 )
 
@@ -10,90 +11,75 @@ type Consumer struct {
 	connector        *Connector
 	queueName        string
 	exchangeType     string
-	exchangeName     string
-	bindingKey       string
-	consumerTag      string
 	qosPrefetchCount int
-	done             chan error
 }
 
-func NewConsumer(uri, queueName, exchangeName, exchangeType, bindingKey, consumerTag string, qosPrefetchCount int, done chan error) *Consumer {
+func NewConsumer(uri, queueName, exchangeType string, qosPrefetchCount, maxReconnectAttempts, reconnectTimeoutMs int) *Consumer {
 	return &Consumer{
-		connector:        NewConnector(uri, exchangeName, exchangeType, done),
+		connector:        NewConnector(uri, queueName, exchangeType, maxReconnectAttempts, reconnectTimeoutMs),
 		queueName:        queueName,
-		exchangeName:     exchangeName,
 		exchangeType:     exchangeType,
-		bindingKey:       bindingKey,
-		consumerTag:      consumerTag,
 		qosPrefetchCount: qosPrefetchCount,
-		done:             done,
 	}
 }
 
-func (c *Consumer) announceQueue() (<-chan amqp.Delivery, error) {
+func (c *Consumer) Connect() error {
+	return c.connector.Connect()
+}
+
+func (c *Consumer) IsMaxConnError(err error) bool {
+	return c.connector.IsMaxConnError(err)
+}
+
+func (c *Consumer) Consume() (<-chan amqp.Delivery, error) {
 	channel := c.connector.GetChannel()
-	queue, err := channel.QueueDeclare(
-		c.queueName,
-		true,
-		false,
-		false,
-		false,
-		nil,
+	err := channel.Qos(c.qosPrefetchCount, 0, false)
+	if err != nil {
+		return nil, fmt.Errorf("error setting qos: %w", err)
+	}
+	return channel.Consume(
+		c.queueName, // queue
+		"",          // consumer
+		false,       // auto-ack
+		false,       // exclusive
+		false,       // no-local
+		false,       // no-wait
+		nil,         // args
 	)
-	if err != nil {
-		return nil, fmt.Errorf("queue declare: %s", err)
-	}
-
-	err = channel.Qos(c.qosPrefetchCount, 0, false)
-	if err != nil {
-		return nil, fmt.Errorf("error setting qos: %s", err)
-	}
-
-	if err = channel.QueueBind(
-		queue.Name,
-		c.bindingKey,
-		c.exchangeName,
-		false,
-		nil,
-	); err != nil {
-		return nil, fmt.Errorf("queue bind: %s", err)
-	}
-
-	msgs, err := channel.Consume(
-		queue.Name,
-		c.consumerTag,
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("queue consume: %s", err)
-	}
-
-	return msgs, nil
 }
 
-func (c *Consumer) Handle(fn func(<-chan amqp.Delivery)) error {
-	var err error
-	if err = c.connector.Connect(); err != nil {
-		return fmt.Errorf("error: %v", err)
-	}
-	msgs, err := c.announceQueue()
-	if err != nil {
-		return fmt.Errorf("error: %v", err)
-	}
-
+func (c *Consumer) Reconnect() (deliveries <-chan amqp.Delivery, err error) {
 	for {
-		go fn(msgs)
-		// TODO: Implement reconnecting
-		// if <-c.done != nil {
-		// msgs, err = c.reConnect()
-		// if err != nil {
-		// 	return fmt.Errorf("Reconnecting Error: %s", err)
-		// }
-		// }
-		// fmt.Println("Reconnected... possibly")
+		cErr := c.connector.Reconnect()
+		if cErr != nil && c.IsMaxConnError(cErr) {
+			return nil, cErr
+		}
+		deliveries, err = c.Consume()
+		if err == nil {
+			break
+		}
+	}
+	return
+}
+
+func (c *Consumer) Handle(fn func([]byte)) error {
+	if err := c.Connect(); err != nil {
+		return err
+	}
+	deliveries, err := c.Consume()
+	if err != nil {
+		return err
+	}
+	for {
+		select {
+		case msg := <-deliveries:
+			log.Debug().Msgf("Receiving events from queue: %+v", msg.Body)
+			fn(msg.Body)
+		case <-c.connector.errCh:
+			deliveries, err = c.Reconnect()
+			if err != nil {
+				return err
+			}
+		}
 	}
 }

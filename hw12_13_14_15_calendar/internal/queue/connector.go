@@ -3,26 +3,33 @@ package queue
 import (
 	"errors"
 	"fmt"
-	"log"
+	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 )
 
 type Connector struct {
-	conn         *amqp.Connection
-	channel      *amqp.Channel
-	uri          string
-	exchangeType string
-	exchangeName string
-	done         chan error
+	conn                 *amqp.Connection
+	channel              *amqp.Channel
+	uri                  string
+	queueName            string
+	exchangeType         string
+	errCh                chan *amqp.Error
+	reconnectAttempts    int
+	maxReconnectAttempts int
+	reconnectTimeoutMs   int
 }
 
-func NewConnector(uri, exchangeName, exchangeType string, done chan error) *Connector {
+var ErrMaxConnectionAttempts = errors.New("maximum connection has been reached")
+
+func NewConnector(uri, queueName, exchangeType string, maxReconnectAttempts, reconnectTimeoutMs int) *Connector {
 	return &Connector{
-		uri:          uri,
-		exchangeName: exchangeName,
-		exchangeType: exchangeType,
-		done:         done,
+		uri:                  uri,
+		queueName:            queueName,
+		exchangeType:         exchangeType,
+		maxReconnectAttempts: maxReconnectAttempts,
+		reconnectTimeoutMs:   reconnectTimeoutMs,
 	}
 }
 
@@ -30,33 +37,53 @@ func (c *Connector) GetChannel() *amqp.Channel {
 	return c.channel
 }
 
+func (c *Connector) IsMaxConnError(err error) bool {
+	return errors.Is(err, ErrMaxConnectionAttempts)
+}
+
 func (c *Connector) Connect() error {
 	var err error
 
 	if c.conn, err = amqp.Dial(c.uri); err != nil {
-		return fmt.Errorf("dial: %s", err)
+		return fmt.Errorf("dial: %w", err)
 	}
 
 	if c.channel, err = c.conn.Channel(); err != nil {
-		return fmt.Errorf("channel: %s", err)
+		return fmt.Errorf("channel: %w", err)
 	}
+
+	_, err = c.channel.QueueDeclare(
+		c.queueName, // queue
+		false,       // durable
+		false,       // delete when unused
+		false,       // exclusive
+		false,       // no-wait
+		nil,         // arguments
+	)
+
+	if err != nil {
+		return fmt.Errorf("queue declare: %w", err)
+	}
+
+	c.errCh = c.conn.NotifyClose(make(chan *amqp.Error))
 
 	go func() {
-		log.Printf("closing: %s", <-c.conn.NotifyClose(make(chan *amqp.Error)))
-		c.done <- errors.New("channel closed")
+		log.Info().Msgf("closing: %s", <-c.errCh)
 	}()
 
-	if err = c.channel.ExchangeDeclare(
-		c.exchangeName,
-		c.exchangeType,
-		true,
-		false,
-		false,
-		false,
-		nil,
-	); err != nil {
-		return fmt.Errorf("exchange declare: %s", err)
-	}
+	return nil
+}
 
+func (c *Connector) Reconnect() error {
+	c.reconnectAttempts++
+	if c.reconnectAttempts > c.maxReconnectAttempts {
+		return ErrMaxConnectionAttempts
+	}
+	log.Info().Msg("Connection to queue has been failed. Trying to reconnect...")
+	time.Sleep(time.Duration(c.reconnectTimeoutMs) * time.Millisecond)
+	if err := c.Connect(); err != nil {
+		return err
+	}
+	c.reconnectAttempts = 0
 	return nil
 }
