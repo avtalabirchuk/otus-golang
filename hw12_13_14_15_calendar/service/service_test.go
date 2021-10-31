@@ -39,11 +39,15 @@ type EventsResponse struct {
 	Events []JSONEvent `json:"events"`
 }
 
-var service Service
-var repo *repository.MemoryRepo
+var (
+	service Service
+	repo    *repository.MemoryRepo
+)
 
-var grpcAddress = "localhost:50051"
-var httpAddress = "localhost:50052"
+var (
+	grpcAddress = "localhost:50051"
+	httpAddress = "localhost:50052"
+)
 
 func createEvent(ID int64, startDate time.Time, endDate time.Time) repository.Event {
 	return repository.Event{

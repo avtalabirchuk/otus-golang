@@ -1,9 +1,9 @@
 package service
 
 import (
-	grpc "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/service/server"
-
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/repository"
+
+	grpc "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/service/server"
 )
 
 type Service interface {

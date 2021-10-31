@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/repository"
 )
@@ -30,24 +30,26 @@ func ConvertTimeToTimestamp(ntime sql.NullTime) (result *timestamp.Timestamp, er
 		err = ErrInvalidNullTime
 		return
 	}
-	return timestamppb.New(tvalue), nil
+	return ptypes.TimestampProto(tvalue)
 }
 
 // Didn't want to use reflection.
 func ConvertEventToProto(evt repository.Event) (*Event, error) {
 	result := &Event{
-		ID:     evt.ID,
-		UserID: evt.UserID,
-		Title:  evt.Title,
+		ID:          evt.ID,
+		UserID:      evt.UserID,
+		Title:       evt.Title,
+		NotifiedFor: int64(evt.NotifiedFor),
 	}
-	result.StartDate = timestamppb.New(evt.StartDate)
-	result.EndDate = timestamppb.New(evt.EndDate)
-	if evt.NotifiedAt.Valid {
-		if value, err := ConvertTimeToTimestamp(evt.NotifiedAt); err == nil {
-			result.NotifiedAt = value
-		} else {
-			return nil, err
-		}
+	if value, err := ptypes.TimestampProto(evt.StartDate); err != nil {
+		return nil, err
+	} else {
+		result.StartDate = value
+	}
+	if value, err := ptypes.TimestampProto(evt.EndDate); err != nil {
+		return nil, err
+	} else {
+		result.EndDate = value
 	}
 	return result, nil
 }
@@ -64,6 +66,9 @@ func ConvertEventFromProto(evt *Event) (*repository.Event, error) {
 	if evt.UserID != 0 {
 		result.UserID = evt.UserID
 	}
+	if evt.NotifiedFor != 0 {
+		result.NotifiedFor = int(evt.NotifiedFor)
+	}
 	if evt.Title != "" {
 		result.Title = evt.Title
 	}
@@ -72,12 +77,6 @@ func ConvertEventFromProto(evt *Event) (*repository.Event, error) {
 	}
 	if evt.EndDate != nil {
 		result.EndDate = time.Unix(evt.EndDate.GetSeconds(), int64(evt.EndDate.GetNanos()))
-	}
-	if evt.NotifiedAt != nil {
-		result.NotifiedAt = sql.NullTime{
-			Time:  time.Unix(evt.NotifiedAt.GetSeconds(), int64(evt.NotifiedAt.GetNanos())),
-			Valid: true,
-		}
 	}
 	return &result, nil
 }

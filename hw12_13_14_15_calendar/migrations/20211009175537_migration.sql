@@ -7,15 +7,15 @@ CREATE TABLE users
 );
 
 CREATE TABLE events
-(id          SERIAL PRIMARY KEY NOT NULL,
- user_id     INT NOT NULL REFERENCES users(id),
- title       VARCHAR(100) NOT NULL,
- description text,
- start_date  TIMESTAMPTZ default now(),
- end_date    TIMESTAMPTZ default now(),
- notified_at TIMESTAMPTZ,
- created_at  TIMESTAMPTZ NOT NULL default now(),
- updated_at  TIMESTAMPTZ NOT NULL default now()
+(id           SERIAL PRIMARY KEY NOT NULL,
+ user_id      INT NOT NULL REFERENCES users(id),
+ title        VARCHAR(100) NOT NULL,
+ description  text,
+ start_date   TIMESTAMPTZ default now(),
+ end_date     TIMESTAMPTZ default now(),
+ notified_for INT NOT NULL default 1,
+ created_at   TIMESTAMPTZ NOT NULL default now(),
+ updated_at   TIMESTAMPTZ NOT NULL default now()
 );
 
 create index owner_idx on events (user_id);

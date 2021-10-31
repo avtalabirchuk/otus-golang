@@ -13,7 +13,7 @@ message Event {
  string Description = 4;
  google.protobuf.Timestamp StartDate = 5;
  google.protobuf.Timestamp EndDate = 6;
- google.protobuf.Timestamp NotifiedAt = 7;
+ int64 NotifiedFor = 7;
 }
 
 message EventsResponse {

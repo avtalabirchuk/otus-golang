@@ -10,20 +10,24 @@ import (
 )
 
 type Config struct {
-	Host            string `yaml:"host" config:"required"`
-	Port            int    `yaml:"port" config:"required"`
-	RepoType        string `yaml:"repoType" config:"required"`
-	LogLevel        string `yaml:"logLevel"`
-	LogPath         string `yaml:"logPath"`
-	DBHost          string `yaml:"dbHost" config:"required"`
-	DBPort          int    `yaml:"dbPort" config:"required"`
-	DBName          string `yaml:"dbName" config:"required"`
-	DBUser          string `yaml:"dbUser" config:"required"`
-	DBPass          string `yaml:"dbPass" config:"required"`
-	DBMaxConn       int    `yaml:"dBMaxConn"`
-	DBItemsPerQuery int    `yaml:"dBItemsPerQuery"`
-	GRPCAddress     string `yaml:"grpcAddress"`
-	HTTPAddress     string `yaml:"httpAddress"`
+	Host        string    `yaml:"host" config:"required"`
+	Port        int       `yaml:"port" config:"required"`
+	GRPCAddress string    `yaml:"grpcAddress"`
+	HTTPAddress string    `yaml:"httpAddress"`
+	LogConfig   LogConfig `yaml:"logConfig"`
+	DBConfig    DBConfig  `yaml:"dbConfig"`
+}
+
+type Scheduler struct {
+	LogConfig   LogConfig   `yaml:"logConfig"`
+	DBConfig    DBConfig    `yaml:"dbConfig"`
+	QueueConfig QueueConfig `yaml:"queueConfig"`
+}
+
+type Sender struct {
+	LogConfig   LogConfig   `yaml:"logConfig"`
+	DBConfig    DBConfig    `yaml:"dbConfig"`
+	QueueConfig QueueConfig `yaml:"queueConfig"`
 }
 
 var ErrConfigPath = errors.New("Config path is not provided")
@@ -33,13 +37,43 @@ func Read(fpath string) (config *Config, err error) {
 		return nil, ErrConfigPath
 	}
 	config = &Config{
-		Host:            "localhost",
-		Port:            8081,
-		LogLevel:        "info",
-		DBHost:          "localhost",
-		DBPort:          5432,
-		DBMaxConn:       10,
-		DBItemsPerQuery: 100,
+		Host:      "localhost",
+		Port:      8081,
+		LogConfig: defaultLogConfig(),
+		DBConfig:  defaultDBConfig(),
+	}
+	loader := confita.NewLoader(
+		file.NewBackend(fpath),
+		env.NewBackend(),
+	)
+	err = loader.Load(context.Background(), config)
+	return
+}
+
+func NewScheduler(fpath string) (config *Scheduler, err error) {
+	if fpath == "" {
+		return nil, ErrConfigPath
+	}
+	config = &Scheduler{
+		LogConfig:   defaultLogConfig(),
+		DBConfig:    defaultDBConfig(),
+		QueueConfig: defaultQueueConfig(),
+	}
+	loader := confita.NewLoader(
+		file.NewBackend(fpath),
+		env.NewBackend(),
+	)
+	err = loader.Load(context.Background(), config)
+	return
+}
+
+func NewSender(fpath string) (config *Sender, err error) {
+	if fpath == "" {
+		return nil, ErrConfigPath
+	}
+	config = &Sender{
+		LogConfig:   defaultLogConfig(),
+		QueueConfig: defaultQueueConfig(),
 	}
 	loader := confita.NewLoader(
 		file.NewBackend(fpath),

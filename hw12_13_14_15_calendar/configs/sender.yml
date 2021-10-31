@@ -1,0 +1,11 @@
+logConfig:
+  level: "debug"
+  filePath: "logs/calendar_sender.log"
+
+queueConfig:
+  user: "guest"
+  pass: "guest"
+  host: "localhost"
+  port: 5672
+  queueName: "events"
+  scanTimeout: 10

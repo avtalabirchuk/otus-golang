@@ -29,11 +29,11 @@ func getLogLevel(str string) zerolog.Level {
 	}
 }
 
-func Init(c *config.Config) (err error) {
+func Init(c *config.LogConfig) (err error) {
 	var logInput io.Writer = os.Stderr
-	logLevel := getLogLevel(c.LogLevel)
-	if c.LogPath != "" {
-		f, err := os.OpenFile(c.LogPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o666)
+	logLevel := getLogLevel(c.Level)
+	if c.FilePath != "" {
+		f, err := os.OpenFile(c.FilePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o666)
 		if err != nil {
 			return fmt.Errorf("%s: %w", ErrFileLog, err)
 		}

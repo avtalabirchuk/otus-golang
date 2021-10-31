@@ -20,7 +20,7 @@ func New(c *config.Config, r repository.Base) (*App, error) {
 	return &App{c: c, r: r}, nil
 }
 
-func (app *App) Run(errCh *chan error, doneCh *chan bool) {
+func (app *App) Run(errCh chan error, doneCh chan bool) {
 	s := service.New(app.r)
 
 	var wg sync.WaitGroup
@@ -28,18 +28,18 @@ func (app *App) Run(errCh *chan error, doneCh *chan bool) {
 	go func() {
 		defer wg.Done()
 		if app.c.GRPCAddress != "" {
-			*errCh <- s.RunGRPC(app.c.GRPCAddress)
+			errCh <- s.RunGRPC(app.c.GRPCAddress)
 		}
 	}()
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		if app.c.HTTPAddress != "" && app.c.GRPCAddress != "" {
-			*errCh <- s.RunHTTP(app.c.GRPCAddress, app.c.HTTPAddress)
+			errCh <- s.RunHTTP(app.c.GRPCAddress, app.c.HTTPAddress)
 		}
 	}()
 	go func() {
 		wg.Wait()
-		close(*doneCh)
+		close(doneCh)
 	}()
 }
