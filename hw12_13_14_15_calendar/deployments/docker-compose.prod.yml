@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  db:
+    volumes:
+      - pg_volume:/var/lib/postgresql/data
+
+volumes:
+  pg_volume:
+    driver: local

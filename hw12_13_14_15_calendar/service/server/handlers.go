@@ -72,6 +72,7 @@ func (s *Service) GetEvents(ctx context.Context, query *QueryEventsRequest) (res
 		}
 		result.Events = append(result.Events, converted)
 	}
+	fmt.Printf("result.Events %+v\n", result.Events)
 	return
 }
 
@@ -93,9 +94,10 @@ func (s *Service) CreateEvent(ctx context.Context, event *Event) (result *Event,
 }
 
 func (s *Service) UpdateEvent(ctx context.Context, data *UpdateEventRequest) (result *Event, err error) {
+	log.Debug().Msgf("[GRPC] Update Event, incoming data: %+v\n", data)
 	obj, err := ConvertEventFromProto(data.Event)
 	if err != nil {
-		err = status.Errorf(codes.InvalidArgument, "%s", err)
+		err = status.Errorf(codes.InvalidArgument, "converting event from proto error %s", err)
 		return
 	}
 	evt, err := s.r.UpdateEvent(data.Id, *obj)
@@ -111,4 +113,32 @@ func (s *Service) UpdateEvent(ctx context.Context, data *UpdateEventRequest) (re
 
 func (s *Service) DeleteEvent(ctx context.Context, data *DeleteEventRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, s.r.DeleteEvent(data.Id)
+}
+
+func (s *Service) CreateUser(ctx context.Context, user *User) (result *User, err error) {
+	log.Debug().Msgf("[GRPC] Receiving User obj: %+v\n", user)
+	obj, err := ConvertUserFromProto(user)
+	if err != nil {
+		err = status.Errorf(codes.InvalidArgument, "%s", err)
+		return
+	}
+	usr, err := s.r.CreateUser(*obj)
+	if err != nil {
+		if _, ok := err.(validator.ValidationErrors); ok {
+			err = status.Errorf(codes.InvalidArgument, "%s", err)
+			fmt.Println("ERRRR", err)
+		}
+		return
+	}
+	log.Debug().Msgf("[GRPC] Created User: %+v\n", usr)
+	return ConvertUserToProto(usr)
+}
+
+func (s *Service) GetUser(ctx context.Context, query *GetUserRequest) (result *User, err error) {
+	obj, err := s.r.GetUser(query.GetId())
+	if err != nil {
+		err = status.Errorf(codes.NotFound, "%s", err)
+		return
+	}
+	return ConvertUserToProto(obj)
 }

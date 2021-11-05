@@ -36,6 +36,8 @@ VALUES
 (:user_id, :title, :description, :start_date, :end_date, :notified_for)
 RETURNING id`
 
+var insertUserQs = `INSERT INTO users (email, first_name, last_name) VALUES (:email, :first_name, :last_name) RETURNING id`
+
 var insertStatusQs = `INSERT INTO events_status (event_id) VALUES ($1)`
 
 var updateQs = `UPDATE events
@@ -96,17 +98,28 @@ func NewPSQLRepo(args ...interface{}) *PSQLRepo {
 }
 
 func (r *PSQLRepo) getEventsBetween(startPeriod time.Time, endPeriod time.Time) (result []Event, err error) {
-	query := "SELECT * FROM events WHERE (start_date <= $1 and end_date >= $1) or (start_date <= $2 and end_date >= $2) or (start_date >= $1 and end_date <= $2) ORDER BY start_date ASC LIMIT $3"
+	query := `SELECT e.*, es.status FROM events e JOIN events_status es on e.id = es.event_id
+		WHERE (start_date <= $1 and end_date >= $1) or (start_date <= $2 and end_date >= $2) or (start_date >= $1 and end_date <= $2) ORDER BY start_date ASC LIMIT $3`
 	err = r.db.Select(&result, query, startPeriod, endPeriod, r.itemsPerQuery)
 	return
 }
 
-func (r *PSQLRepo) getEventByID(id int64) (result Event, err error) {
-	err = r.db.Get(&result, "SELECT * FROM events WHERE id = $1", id)
+func (r *PSQLRepo) getEventByID(id int64) (Event, error) {
+	event := Event{}
+	err := r.db.Get(&event, "SELECT e.*, es.status FROM events e join events_status es on e.id = es.event_id WHERE e.id = $1", id)
 	if err != nil {
-		log.Debug().Msgf("[DB] getEventByID Err %d, %+v, %s", id, result, err)
+		log.Debug().Msgf("[DB] getEventByID Err %d, %+v, %s", id, event, err)
 	}
-	return
+	return event, err
+}
+
+func (r *PSQLRepo) getUserByID(id int64) (User, error) {
+	user := User{}
+	err := r.db.Get(&user, "SELECT * FROM users WHERE id = $1", id)
+	if err != nil {
+		log.Debug().Msgf("[DB] getUserByID Err %d, %+v, %s", id, user, err)
+	}
+	return user, err
 }
 
 func (r *PSQLRepo) GetDayEvents(date time.Time) (result []Event, err error) {
@@ -172,7 +185,7 @@ func (r *PSQLRepo) CreateEvent(data Event) (event Event, err error) {
 	}
 
 	if evt.ID == 0 {
-		err = ErrEventNotFound
+		err = ErrItemNotFound
 		return
 	}
 	_, err = tx.Exec(insertStatusQs, evt.ID)
@@ -213,6 +226,38 @@ func (r *PSQLRepo) UpdateEvent(id int64, data Event) (event Event, err error) {
 		return
 	}
 	return r.getEventByID(id)
+}
+
+func (r *PSQLRepo) CreateUser(data User) (user User, err error) {
+	err = r.validator.Struct(data)
+	if err != nil {
+		return
+	}
+	stmt, err := r.db.PrepareNamed(insertUserQs)
+	if err != nil {
+		return
+	}
+
+	row := stmt.QueryRow(data)
+	if err = row.Err(); err != nil {
+		return
+	}
+	usr := User{}
+	err = row.StructScan(&usr)
+	if err != nil {
+		return
+	}
+
+	if usr.ID == 0 {
+		err = ErrItemNotFound
+		return
+	}
+
+	return r.getUserByID(usr.ID)
+}
+
+func (r *PSQLRepo) GetUser(id int64) (user User, err error) {
+	return r.getUserByID(id)
 }
 
 func (r *PSQLRepo) GetCurrentEvents() (result []Event, err error) {

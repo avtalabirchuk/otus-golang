@@ -1,14 +1,12 @@
-version: "3"
+version: "2.4"
 
 services:
   db:
     image: postgres:14
     environment:
       - POSTGRES_USER=db_calendar_user
-      - POSTGRES_DB=db_calendar
       - POSTGRES_PASSWORD=db_calendar_pass
-    env_file:
-      - postgres.env
+      - POSTGRES_DB=db_calendar
     ports:
       - "5432:5432"
     healthcheck:
@@ -47,7 +45,7 @@ services:
     volumes:
       - ../migrations:/migrations
     ports:
-      - "8888:8081"
+      - "8888:50052"
     depends_on:
       db:
         condition: service_healthy

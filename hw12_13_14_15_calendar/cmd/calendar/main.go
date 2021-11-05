@@ -44,6 +44,7 @@ func main() {
 		fatal(repository.ErrUnSupportedRepoType)
 	}
 
+	// Move to dockerfile
 	if cfg.DBConfig.InitOnStart {
 		currentDir, err := os.Getwd()
 		if err != nil {

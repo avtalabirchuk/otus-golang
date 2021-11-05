@@ -8,18 +8,22 @@ import (
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/utils"
 )
 
-type MemoryStorage map[int64]Event
+type (
+	MemoryStorageEvents map[int64]Event
+	MemoryStorageUsers  map[int64]User
+)
 
 type MemoryRepo struct {
-	storage MemoryStorage
-	mx      sync.RWMutex
+	events MemoryStorageEvents
+	users  MemoryStorageUsers
+	mx     sync.RWMutex
 }
 
 func (r *MemoryRepo) Connect(ctx context.Context, url string) error {
 	return nil
 }
 
-func (r *MemoryRepo) Init(ctx context.Context, url string) (err error) {
+func (r *MemoryRepo) Init(ctx context.Context, url, migrationsDir string) (err error) {
 	return nil
 }
 
@@ -29,15 +33,23 @@ func (r *MemoryRepo) Close() error {
 }
 
 func (r *MemoryRepo) ClearStorage() {
-	r.storage = make(MemoryStorage)
+	r.events = make(MemoryStorageEvents)
+	r.users = make(MemoryStorageUsers)
 }
 
-func (r *MemoryRepo) GetStorage() *MemoryStorage {
-	return &r.storage
+func (r *MemoryRepo) GetStorageEvents() *MemoryStorageEvents {
+	return &r.events
+}
+
+func (r *MemoryRepo) GetStorageUsers() *MemoryStorageUsers {
+	return &r.users
 }
 
 func NewMemoryRepo() *MemoryRepo {
-	return &MemoryRepo{storage: make(MemoryStorage)}
+	return &MemoryRepo{
+		events: make(MemoryStorageEvents),
+		users:  make(MemoryStorageUsers),
+	}
 }
 
 func isDateAfter(date time.Time, base time.Time) bool {
@@ -52,7 +64,7 @@ func (r *MemoryRepo) getEventsInRange(startPeriod time.Time, endPeriod time.Time
 	r.mx.RLock()
 	defer r.mx.RUnlock()
 	result := []Event{}
-	for _, v := range r.storage {
+	for _, v := range r.events {
 		isStartPeriodInRange := isDateAfter(startPeriod, v.StartDate) && isDateBefore(startPeriod, v.EndDate)
 		isEndPeriodInRange := isDateAfter(endPeriod, v.StartDate) && isDateBefore(endPeriod, v.EndDate)
 		isPeriodOutRange := isDateAfter(endPeriod, v.EndDate) && isDateBefore(startPeriod, v.StartDate)
@@ -84,30 +96,30 @@ func (r *MemoryRepo) CreateEvent(data Event) (Event, error) {
 	data.ID = id
 	r.mx.Lock()
 	defer r.mx.Unlock()
-	r.storage[id] = data
+	r.events[id] = data
 	return data, nil
 }
 
 func (r *MemoryRepo) UpdateEvent(id int64, data Event) (event Event, err error) {
 	r.mx.Lock()
 	defer r.mx.Unlock()
-	event, ok := r.storage[id]
+	event, ok := r.events[id]
 	if !ok {
-		return Event{}, ErrEventNotFound
+		return Event{}, ErrItemNotFound
 	}
 	err = MergeEvents(&event, data)
-	r.storage[id] = event
+	r.events[id] = event
 	return
 }
 
 func (r *MemoryRepo) DeleteEvent(id int64) (err error) {
 	r.mx.Lock()
 	defer r.mx.Unlock()
-	_, ok := r.storage[id]
+	_, ok := r.events[id]
 	if !ok {
-		return ErrEventNotFound
+		return ErrItemNotFound
 	}
-	delete(r.storage, id)
+	delete(r.events, id)
 	return
 }
 
@@ -121,4 +133,26 @@ func (r *MemoryRepo) MarkEventsAsSent(ids *[]int64) error {
 
 func (r *MemoryRepo) MarkEventsAsProcessed(ids *[]int64) error {
 	return nil
+}
+
+func (r *MemoryRepo) CreateUser(data User) (User, error) {
+	id, err := utils.GenerateUID()
+	if err != nil {
+		return User{}, ErrUserCreate
+	}
+	data.ID = id
+	r.mx.Lock()
+	defer r.mx.Unlock()
+	r.users[id] = data
+	return data, nil
+}
+
+func (r *MemoryRepo) GetUser(id int64) (User, error) {
+	r.mx.Lock()
+	defer r.mx.Unlock()
+	user, ok := r.users[id]
+	if !ok {
+		return User{}, ErrItemNotFound
+	}
+	return user, nil
 }

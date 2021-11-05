@@ -26,6 +26,9 @@ type CRUD interface {
 	CreateEvent(Event) (Event, error)
 	UpdateEvent(int64, Event) (Event, error)
 	DeleteEvent(int64) error
+
+	CreateUser(User) (User, error)
+	GetUser(int64) (User, error)
 	dbConnector
 }
 
@@ -44,9 +47,17 @@ type Event struct {
 	Description sql.NullString `db:"description"`
 	StartDate   time.Time      `db:"start_date" validate:"required"`
 	EndDate     time.Time      `db:"end_date" validate:"required,gtfield=StartDate"`
-	NotifiedFor int            `db:"notified_for" validate:"gte=1"`
+	NotifiedFor int64          `db:"notified_for" validate:"gte=1"`
 	CreatedAt   sql.NullTime   `db:"created_at"`
 	UpdatedAt   sql.NullTime   `db:"updated_at"`
+	Status      string         `db:"status"`
+}
+
+type User struct {
+	ID        int64          `db:"id"`
+	Email     string         `db:"email" validate:"required,email"`
+	FirstName sql.NullString `db:"first_name"`
+	LastName  sql.NullString `db:"last_name"`
 }
 
 func newRepo(repoType string, args ...interface{}) interface{} {

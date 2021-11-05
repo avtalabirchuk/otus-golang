@@ -5,12 +5,12 @@ import (
 )
 
 type Calendar struct {
-	Host        string `yaml:"host" env:"HOST" env-default:"localhost"`
-	Port        int    `yaml:"port" env:"PORT" env-default:"8081"`
-	GRPCAddress string `yaml:"GRPCAddress" env:"GRPC_ADDRESS"`
-	HTTPAddress string `yaml:"HTTPAddress" env:"HTTP_ADDRESS"`
-	LogConfig   LogConfig
-	DBConfig    DBConfig
+	Host        string    `yaml:"host" env:"HOST" env-default:"localhost"`
+	Port        int       `yaml:"port" env:"PORT" env-default:"8081"`
+	GRPCAddress string    `yaml:"grpcAddress" env:"GRPC_ADDRESS"`
+	HTTPAddress string    `yaml:"httpAddress" env:"HTTP_ADDRESS"`
+	LogConfig   LogConfig `yaml:"logConfig"`
+	DBConfig    DBConfig  `yaml:"dbConfig"`
 }
 
 type Scheduler struct {

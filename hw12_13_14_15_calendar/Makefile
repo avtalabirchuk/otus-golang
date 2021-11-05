@@ -39,9 +39,14 @@ migrate:
 	./scripts/migrations.sh
 
 up:
-	docker-compose -f deployments/docker-compose.yml up -d
+	docker-compose -f deployments/docker-compose.yml up -d --build
 	
 down:
+	docker-compose -f deployments/docker-compose.yml down -v
+
+integration-tests:
+	docker-compose -f deployments/docker-compose.yml up -d --build
+	ginkgo ./tests
 	docker-compose -f deployments/docker-compose.yml down
 
 .PHONY: generate
