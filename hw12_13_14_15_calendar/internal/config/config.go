@@ -1,84 +1,48 @@
 package config
 
 import (
-	"context"
-	"errors"
-
-	"github.com/heetch/confita"
-	"github.com/heetch/confita/backend/env"
-	"github.com/heetch/confita/backend/file"
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Calendar struct {
-	Host        string    `yaml:"host" config:"required"`
-	Port        int       `yaml:"port" config:"required"`
-	GRPCAddress string    `yaml:"grpcAddress"`
-	HTTPAddress string    `yaml:"httpAddress"`
+	Host        string    `yaml:"host" env:"HOST" env-default:"localhost"`
+	Port        int       `yaml:"port" env:"PORT" env-default:"8081"`
+	GRPCAddress string    `yaml:"grpcAddress" env:"GRPC_ADDRESS"`
+	HTTPAddress string    `yaml:"httpAddress" env:"HTTP_ADDRESS"`
 	LogConfig   LogConfig `yaml:"logConfig"`
 	DBConfig    DBConfig  `yaml:"dbConfig"`
 }
 
 type Scheduler struct {
-	LogConfig   LogConfig   `yaml:"logConfig"`
-	DBConfig    DBConfig    `yaml:"dbConfig"`
-	QueueConfig QueueConfig `yaml:"queueConfig"`
+	LogConfig   LogConfig
+	DBConfig    DBConfig
+	QueueConfig QueueConfig
 }
 
 type Sender struct {
-	LogConfig   LogConfig   `yaml:"logConfig"`
-	DBConfig    DBConfig    `yaml:"dbConfig"`
-	QueueConfig QueueConfig `yaml:"queueConfig"`
+	LogConfig   LogConfig
+	DBConfig    DBConfig
+	QueueConfig QueueConfig
 }
 
-var ErrConfigPath = errors.New("config path is not provided")
-
-func NewCalendar(fpath string) (config *Calendar, err error) {
-	if fpath == "" {
-		return nil, ErrConfigPath
+func readConfig(fpath string, cfg interface{}) error {
+	if fpath != "" {
+		return cleanenv.ReadConfig(fpath, cfg)
 	}
-	config = &Calendar{
-		Host:      "localhost",
-		Port:      8081,
-		LogConfig: defaultLogConfig(),
-		DBConfig:  defaultDBConfig(),
-	}
-	loader := confita.NewLoader(
-		file.NewBackend(fpath),
-		env.NewBackend(),
-	)
-	err = loader.Load(context.Background(), config)
-	return
+	return cleanenv.ReadEnv(cfg)
 }
 
-func NewScheduler(fpath string) (config *Scheduler, err error) {
-	if fpath == "" {
-		return nil, ErrConfigPath
-	}
-	config = &Scheduler{
-		LogConfig:   defaultLogConfig(),
-		DBConfig:    defaultDBConfig(),
-		QueueConfig: defaultQueueConfig(),
-	}
-	loader := confita.NewLoader(
-		file.NewBackend(fpath),
-		env.NewBackend(),
-	)
-	err = loader.Load(context.Background(), config)
-	return
+func NewCalendar(fpath string) (*Calendar, error) {
+	var cfg Calendar
+	return &cfg, readConfig(fpath, &cfg)
 }
 
-func NewSender(fpath string) (config *Sender, err error) {
-	if fpath == "" {
-		return nil, ErrConfigPath
-	}
-	config = &Sender{
-		LogConfig:   defaultLogConfig(),
-		QueueConfig: defaultQueueConfig(),
-	}
-	loader := confita.NewLoader(
-		file.NewBackend(fpath),
-		env.NewBackend(),
-	)
-	err = loader.Load(context.Background(), config)
-	return
+func NewScheduler(fpath string) (*Scheduler, error) {
+	var cfg Scheduler
+	return &cfg, readConfig(fpath, &cfg)
+}
+
+func NewSender(fpath string) (*Sender, error) {
+	var cfg Sender
+	return &cfg, readConfig(fpath, &cfg)
 }

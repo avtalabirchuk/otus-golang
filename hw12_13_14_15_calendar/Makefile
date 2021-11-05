@@ -10,6 +10,17 @@ build:
 	mkdir -p bin
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./...
 
+.PHONY: test
+test:
+	go test -race -v `go list ./... | grep -v integration-tests`
+
+install-lint-deps:
+	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.37.0
+
+.PHONY: lint
+lint: install-lint-deps
+	golangci-lint run ./...
+
 launch:
 	./bin/calendar -config=./configs/calendar.yml & \
 	./bin/calendar_scheduler -config=./configs/scheduler.yml & \
@@ -23,25 +34,16 @@ run:
 version: build
 	$(BIN) version
 
-.PHONY: test
-test:
-	# go test -race ./internal/... ./pkg/...
-	go test -race ./...
+up:
+	docker-compose -f deployments/docker-compose.yml up -d --build
+	
+down:
+	docker-compose -f deployments/docker-compose.yml down -v
 
-.PHONY: test-pq
-test-pq:
-	PQ_TEST="postgresql://db_calendar_user:db_calendar_pass@localhost:5432/db_calendar" go test -v -count=1 -race -timeout=30s ./...
-
-install-lint-deps:
-	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.37.0
-
-.PHONY: lint
-lint: install-lint-deps
-	golangci-lint run ./...
-
-.PHONY: migrate
-migrate:
-	./scripts/migrations.sh
+integration-tests:
+	docker-compose -f deployments/docker-compose.yml -f deployments/docker-compose.test.yml up -d --build && \
+	API_HOST=http://localhost:8888 ginkgo ./integration-tests && \
+	docker-compose -f deployments/docker-compose.yml -f deployments/docker-compose.test.yml down
 
 .PHONY: generate
 generate:
@@ -52,5 +54,5 @@ generate:
 	--grpc-gateway_out=logtostderr=true:${cdir}/service/server \
 	${cdir}/service/schema/calendar.proto
 
-
+.PHONY: build integration-tests
 # protoc -I /usr/local/include -I ${cdir}/service/grpc/schema --go_out=plugins=grpc:${cdir}/service/grpc/server ${cdir}/service/grpc/schema/calendar.proto

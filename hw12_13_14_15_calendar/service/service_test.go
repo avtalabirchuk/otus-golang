@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -28,8 +27,8 @@ type DataEvent struct {
 }
 
 type JSONEvent struct {
-	ID        string `json:"ID"`
-	UserID    string `json:"UserID"`
+	ID        int64  `json:"ID"`
+	UserID    int64  `json:"UserID"`
 	Title     string `json:"Title"`
 	StartDate string `json:"StartDate"`
 	EndDate   string `json:"EndDate"`
@@ -61,10 +60,10 @@ func createEvent(ID int64, startDate time.Time, endDate time.Time) repository.Ev
 
 func getEventsFromStorage(ids []int64) (result []JSONEvent) {
 	for _, id := range ids {
-		evt := (*repo.GetStorage())[id]
+		evt := (*repo.GetStorageEvents())[id]
 		result = append(result, JSONEvent{
-			ID:        strconv.Itoa(int(evt.ID)),
-			UserID:    strconv.Itoa(int(evt.UserID)),
+			ID:        int64(evt.ID),
+			UserID:    int64(evt.UserID),
 			Title:     evt.Title,
 			StartDate: evt.StartDate.Format(time.RFC3339),
 			EndDate:   evt.EndDate.Format(time.RFC3339),
@@ -109,7 +108,7 @@ func resetStorage() {
 }
 
 func fillRepo(event repository.Event) {
-	(*repo.GetStorage())[event.ID] = event
+	(*repo.GetStorageEvents())[event.ID] = event
 }
 
 func teardown() {
@@ -182,13 +181,13 @@ func TestDeleteEvent(t *testing.T) {
 	var eventId int64 = 5
 	resetStorage()
 
-	_, ok := (*repo.GetStorage())[eventId]
+	_, ok := (*repo.GetStorageEvents())[eventId]
 	require.True(t, ok)
 
 	body := makeQuery(t, http.MethodDelete, fmt.Sprintf("%s/%d", getUrl(), eventId), "{}")
 	require.Equal(t, string(body), "{}")
 
-	_, ok = (*repo.GetStorage())[eventId]
+	_, ok = (*repo.GetStorageEvents())[eventId]
 	require.False(t, ok)
 }
 
@@ -210,10 +209,9 @@ func TestCreateEvent(t *testing.T) {
 	var created JSONEvent
 	err = json.Unmarshal(body, &created)
 
-	intId, err := strconv.Atoi(created.ID)
 	require.Nil(t, err)
 
-	_, ok := (*repo.GetStorage())[int64(intId)]
+	_, ok := (*repo.GetStorageEvents())[created.ID]
 	require.True(t, ok)
 }
 
@@ -227,7 +225,7 @@ func TestUpdateEvent(t *testing.T) {
 		Event DataObject `json:"event"`
 	}{DataObject{"Updated Title"}}
 
-	require.NotEqual(t, (*repo.GetStorage())[eventID].Title, "Updated Title")
+	require.NotEqual(t, (*repo.GetStorageEvents())[eventID].Title, "Updated Title")
 
 	converted, err := json.Marshal(event)
 	require.Nil(t, err)
@@ -239,5 +237,5 @@ func TestUpdateEvent(t *testing.T) {
 	require.Nil(t, err)
 
 	require.Equal(t, updated.Title, "Updated Title")
-	require.Equal(t, (*repo.GetStorage())[eventID].Title, "Updated Title")
+	require.Equal(t, (*repo.GetStorageEvents())[eventID].Title, "Updated Title")
 }

@@ -22,9 +22,12 @@ docker run -d \
 ## postgres exec 
 `docker exec -it  postgres_db bash -c "psql -U db_calendar_user db_calendar"`
 
+## ginko tests go get -u github.com/onsi/ginkgo/ginkgo
 ## postgres migrations 
 `# goose -dir ./migrations postgres "host=127.0.0.1 user=db_calendar_user password=db_calendar_pass dbname=db_calendar sslmode=disable" up`
+
 
 ## todo
 [][create fix commit](https://github.com/avtalabirchuk/otus-golang/pull/16)
 [][to do task list hw13](https://github.com/avtalabirchuk/otus-golang/pull/17)
+[][]to do tast list hw14](https://github.com/avtalabirchuk/otus-golang/pull/18)

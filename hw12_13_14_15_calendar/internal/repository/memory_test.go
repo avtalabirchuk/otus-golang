@@ -21,15 +21,15 @@ func TestMemoryRepo(t *testing.T) {
 	t.Run("get day events", func(t *testing.T) {
 		r := NewMemoryRepo()
 
-		r.storage[1] = Event{ID: 1, UserID: 1, StartDate: getDate(1, time.November), EndDate: getDate(2, time.November)}
-		r.storage[2] = Event{ID: 2, UserID: 1, StartDate: getDate(1, time.November), EndDate: getDate(15, time.November)}
-		r.storage[3] = Event{ID: 3, UserID: 1, StartDate: getDate(3, time.November), EndDate: getDate(4, time.November)}
-		r.storage[4] = Event{ID: 4, UserID: 1, StartDate: getDate(15, time.November), EndDate: getDate(16, time.November)}
+		r.events[1] = Event{ID: 1, UserID: 1, StartDate: getDate(1, time.November), EndDate: getDate(2, time.November)}
+		r.events[2] = Event{ID: 2, UserID: 1, StartDate: getDate(1, time.November), EndDate: getDate(15, time.November)}
+		r.events[3] = Event{ID: 3, UserID: 1, StartDate: getDate(3, time.November), EndDate: getDate(4, time.November)}
+		r.events[4] = Event{ID: 4, UserID: 1, StartDate: getDate(15, time.November), EndDate: getDate(16, time.November)}
 
 		result, err := r.GetDayEvents(getDate(3, time.November))
 		require.Nil(t, err)
 
-		require.Equal(t, result, []Event{r.storage[2], r.storage[3]})
+		require.Equal(t, result, []Event{r.events[2], r.events[3]})
 	})
 
 	t.Run("get week events", func(t *testing.T) {
@@ -45,21 +45,21 @@ func TestMemoryRepo(t *testing.T) {
 		date25_11 := getDate(25, time.November)
 
 		// before requested week
-		r.storage[1] = Event{ID: 1, UserID: 1, StartDate: date01_10, EndDate: date01_11}
+		r.events[1] = Event{ID: 1, UserID: 1, StartDate: date01_10, EndDate: date01_11}
 		// starts before requested week
-		r.storage[2] = Event{ID: 2, UserID: 1, StartDate: date01_10, EndDate: date02_11}
+		r.events[2] = Event{ID: 2, UserID: 1, StartDate: date01_10, EndDate: date02_11}
 		// starts and ends within requested week
-		r.storage[3] = Event{ID: 3, UserID: 1, StartDate: date03_11, EndDate: date05_11}
+		r.events[3] = Event{ID: 3, UserID: 1, StartDate: date03_11, EndDate: date05_11}
 		// starts within requested week and ends after it
-		r.storage[4] = Event{ID: 4, UserID: 1, StartDate: date05_11, EndDate: date15_11}
+		r.events[4] = Event{ID: 4, UserID: 1, StartDate: date05_11, EndDate: date15_11}
 		// starts and ends after requested week
-		r.storage[5] = Event{ID: 5, UserID: 1, StartDate: date15_11, EndDate: date25_11}
+		r.events[5] = Event{ID: 5, UserID: 1, StartDate: date15_11, EndDate: date25_11}
 
 		result, err := r.GetWeekEvents(date02_11)
 		require.Nil(t, err)
 
 		fmt.Printf("%+v", result)
-		require.ElementsMatch(t, []Event{r.storage[2], r.storage[3], r.storage[4]}, result)
+		require.ElementsMatch(t, []Event{r.events[2], r.events[3], r.events[4]}, result)
 	})
 
 	t.Run("get month events", func(t *testing.T) {
@@ -77,22 +77,22 @@ func TestMemoryRepo(t *testing.T) {
 		date15_12 := getDate(15, time.December)
 
 		// before requested month
-		r.storage[1] = Event{ID: 1, UserID: 1, StartDate: date01_10, EndDate: date02_10}
+		r.events[1] = Event{ID: 1, UserID: 1, StartDate: date01_10, EndDate: date02_10}
 		// starts before requested month
-		r.storage[2] = Event{ID: 2, UserID: 1, StartDate: date01_10, EndDate: date01_11}
+		r.events[2] = Event{ID: 2, UserID: 1, StartDate: date01_10, EndDate: date01_11}
 		// starts and ends within requested month
-		r.storage[3] = Event{ID: 3, UserID: 1, StartDate: date02_11, EndDate: date03_11}
+		r.events[3] = Event{ID: 3, UserID: 1, StartDate: date02_11, EndDate: date03_11}
 		// starts within requested month and ends after it
-		r.storage[4] = Event{ID: 4, UserID: 1, StartDate: date05_11, EndDate: date2_12}
+		r.events[4] = Event{ID: 4, UserID: 1, StartDate: date05_11, EndDate: date2_12}
 		// starts and ends after requested month
-		r.storage[5] = Event{ID: 5, UserID: 1, StartDate: date2_12, EndDate: date15_12}
+		r.events[5] = Event{ID: 5, UserID: 1, StartDate: date2_12, EndDate: date15_12}
 
 		result, err := r.GetMonthEvents(date01_11)
 		require.Nil(t, err)
 
 		fmt.Printf("%+v", result)
 
-		require.ElementsMatch(t, []Event{r.storage[2], r.storage[3], r.storage[4]}, result)
+		require.ElementsMatch(t, []Event{r.events[2], r.events[3], r.events[4]}, result)
 	})
 
 	t.Run("create event", func(t *testing.T) {
@@ -103,32 +103,32 @@ func TestMemoryRepo(t *testing.T) {
 		event, err := r.CreateEvent(Event{UserID: 1, StartDate: startDate, EndDate: endDate})
 		require.Nil(t, err)
 		require.NotNil(t, event)
-		require.Equal(t, event, r.storage[event.ID])
+		require.Equal(t, event, r.events[event.ID])
 	})
 
 	t.Run("update event", func(t *testing.T) {
 		r := NewMemoryRepo()
 		var id int64 = 1
 		startDate := getDate(10, time.October)
-		r.storage[id] = Event{UserID: 1, StartDate: startDate}
+		r.events[id] = Event{UserID: 1, StartDate: startDate}
 
 		endDate := startDate.AddDate(0, 0, 1)
 		event, err := r.UpdateEvent(id, Event{UserID: 1, EndDate: endDate})
 
 		require.Nil(t, err)
-		require.Equal(t, event, r.storage[id])
+		require.Equal(t, event, r.events[id])
 	})
 
 	t.Run("remove event", func(t *testing.T) {
 		r := NewMemoryRepo()
 		var id int64 = 1
 		startDate := getDate(10, time.October)
-		r.storage[id] = Event{UserID: 1, StartDate: startDate}
+		r.events[id] = Event{UserID: 1, StartDate: startDate}
 
 		err := r.DeleteEvent(id)
 		require.Nil(t, err)
 
-		_, ok := r.storage[id]
+		_, ok := r.events[id]
 		require.False(t, ok)
 	})
 
@@ -136,10 +136,10 @@ func TestMemoryRepo(t *testing.T) {
 		r := NewMemoryRepo()
 		var id int64 = 1
 		startDate := getDate(10, time.October)
-		r.storage[id] = Event{UserID: 1, StartDate: startDate}
+		r.events[id] = Event{UserID: 1, StartDate: startDate}
 
 		err := r.DeleteEvent(111)
-		require.EqualError(t, err, fmt.Sprintf("%s", ErrEventNotFound))
+		require.EqualError(t, err, fmt.Sprintf("%s", ErrItemNotFound))
 	})
 }
 
