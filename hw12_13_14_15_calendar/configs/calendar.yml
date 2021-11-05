@@ -12,7 +12,7 @@ dbConfig:
   port: 5432
   dbName: "db_calendar"
   user: "db_calendar_user"
-  pass: "db_calendar_pass"
+  password: "db_calendar_pass"
   itemsPerQuery: 50
   repoType: "psql"
 

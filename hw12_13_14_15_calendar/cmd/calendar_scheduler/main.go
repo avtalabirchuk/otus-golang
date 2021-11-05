@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
-	"strconv"
 
 	"github.com/rs/zerolog/log"
 
@@ -50,7 +48,7 @@ func main() {
 	qCfg := cfg.QueueConfig
 
 	producer := queue.NewProducer(
-		fmt.Sprintf("amqp://%s:%s@%s:%s/", qCfg.User, qCfg.Pass, qCfg.Host, strconv.Itoa(qCfg.Port)),
+		qCfg.URI,
 		qCfg.QueueName,
 		qCfg.ExchangeType,
 		qCfg.MaxReconnectAttempts,

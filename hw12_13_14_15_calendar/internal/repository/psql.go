@@ -51,6 +51,14 @@ var (
 	deleteObsoleteStatusQs = fmt.Sprintf(`DELETE FROM events_status WHERE event_id IN (%s);`, selectObsoleteEventsQs)
 )
 
+func (r *PSQLRepo) Init(ctx context.Context, url string) (err error) {
+	err = r.Connect(ctx, url)
+	if err != nil {
+		return err
+	}
+	return r.Close()
+}
+
 func (r *PSQLRepo) Connect(ctx context.Context, url string) (err error) {
 	log.Debug().Msgf("Connecting to %s", url)
 	r.db, err = sqlx.Connect("postgres", url)

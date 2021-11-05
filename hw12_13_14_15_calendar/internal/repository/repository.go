@@ -13,6 +13,7 @@ import (
 var ErrUnSupportedRepoType = errors.New("unsupported repository type")
 
 type dbConnector interface {
+	Init(context.Context, string) error
 	Connect(context.Context, string) error
 	Close() error
 }
@@ -74,6 +75,10 @@ func NewStats(repoType string, args ...interface{}) Stats {
 	return repo
 }
 
+func GetRootSQLDSN(c *config.DBConfig) string {
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable", c.Host, c.Port, c.SuperUser, c.SuperPassword)
+}
+
 func GetSQLDSN(c *config.DBConfig) string {
-	return fmt.Sprintf("host=%s port=%d dbname=%s user=%s password=%s sslmode=disable", c.Host, c.Port, c.DBName, c.User, c.Pass)
+	return fmt.Sprintf("host=%s port=%d dbname=%s user=%s password=%s sslmode=disable", c.Host, c.Port, c.DBName, c.User, c.Password)
 }

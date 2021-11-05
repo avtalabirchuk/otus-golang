@@ -1,1 +1,20 @@
 version: "3"
+
+services:
+  db:
+    image: postgres:14
+    env_file:
+      - postgres.env
+  calendar:
+    build:
+      context: ../
+      dockerfile: ./build/calendar/Dockerfile
+    env_file:
+      - database.env
+      - logger.env
+      - api.env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db

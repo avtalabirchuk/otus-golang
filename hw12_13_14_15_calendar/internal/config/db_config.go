@@ -1,21 +1,15 @@
 package config
 
 type DBConfig struct {
-	Host          string `yaml:"host" config:"required"`
-	Port          int    `yaml:"port" config:"required"`
-	DBName        string `yaml:"dbName" config:"required"`
-	User          string `yaml:"user" config:"required"`
-	Pass          string `yaml:"pass" config:"required"`
-	MaxConn       int    `yaml:"maxConn" config:"required"`
-	ItemsPerQuery int    `yaml:"itemsPerQuery" config:"required"`
-	RepoType      string `yaml:"repoType" config:"required"`
-}
-
-func defaultDBConfig() DBConfig {
-	return DBConfig{
-		Host:          "localhost",
-		Port:          5432,
-		MaxConn:       10,
-		ItemsPerQuery: 100,
-	}
+	Host            string `yaml:"host" env:"DB_HOST"`
+	Port            int    `yaml:"port" env:"DB_PORT"`
+	User            string `yaml:"user" env:"DB_USER"`
+	Password        string `yaml:"password" env:"DB_PASSWORD"`
+	DBName          string `yaml:"dbName" env:"DB_NAME"`
+	MaxConn         int    `yaml:"maxConn" env:"DB_MAX_CONN" env-default:"10"`
+	ItemsPerQuery   int    `yaml:"itemsPerQuery" env:"DB_ITEMS_PER_QUERY" env-default:"100"`
+	RepoType        string `yaml:"repoType" env:"DB_REPO_TYPE"`
+	ApplyMigrations bool   `yaml:"applyMigrations" env:"DB_APPLY_MIGRATIONS"`
+	SuperUser       string `yaml:"DBSuperUser" env:"DB_SUPER_USER"`
+	SuperPassword   string `yaml:"DBSuperPassword" env:"DB_SUPER_PASSWORD"`
 }
