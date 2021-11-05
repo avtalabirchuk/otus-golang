@@ -1,4 +1,4 @@
-BIN := "./bin/calendar"
+BIN := "./bin"
 DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
@@ -7,11 +7,17 @@ cdir = $(shell pwd)
 
 .PHONY: build
 build:
-	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
+	mkdir -p bin
+	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./...
+
+launch:
+	./bin/calendar -config=./configs/calendar.yml & \
+	./bin/calendar_scheduler -config=./configs/scheduler.yml & \
+	./bin/calendar_sender -config=./configs/sender.yml
 
 .PHONY: run
-run: build
-	$(BIN) -config configs/calendar.yml
+run:
+	make build && make launch
 
 .PHONY: version
 version: build

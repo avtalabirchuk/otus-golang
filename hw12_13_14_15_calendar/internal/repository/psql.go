@@ -11,7 +11,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
 
-	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/config"
 	// is used for init postgres.
 	_ "github.com/lib/pq"
 )
@@ -21,36 +20,45 @@ var ErrDBOpen = errors.New("database open error")
 type PSQLRepo struct {
 	db            *sqlx.DB
 	itemsPerQuery int
+	maxConn       int
 	validator     *validator.Validate
 }
 
+var selectCurrentEventsQs = `SELECT e.* from events e join events_status es on e.id = es.event_id
+WHERE DATE_PART('day', start_date::timestamp - NOW()) <= e.notified_for and e.end_date > NOW() and es.status = 'New';`
+
+var selectObsoleteEventsQs = `SELECT id FROM events WHERE DATE_PART('year', NOW()) - DATE_PART('year', end_date::timestamp) >= 1`
+
 var insertQs = `INSERT INTO events
-(user_id, title, description, start_date, end_date, notified_at)
+(user_id, title, description, start_date, end_date, notified_for)
 VALUES
-(:user_id, :title, :description, :start_date, :end_date, :notified_at)
+(:user_id, :title, :description, :start_date, :end_date, :notified_for)
 RETURNING id`
 
+var insertStatusQs = `INSERT INTO events_status (event_id) VALUES ($1)`
+
 var updateQs = `UPDATE events
-	SET (title, description, start_date, end_date, notified_at) = (:title, :description, :start_date, :end_date, :notified_at)
+	SET (title, description, start_date, end_date, notified_for) = (:title, :description, :start_date, :end_date, :notified_for)
 	WHERE id = :id
 	RETURNING id`
 
-var deleteQs = `DELETE FROM events where id = $1 RETURNING id`
+var updateEventsStatusQs = `UPDATE events_status SET status = :status WHERE id IN (:ids);`
 
-func getDSN(c *config.Config) string {
-	return fmt.Sprintf("host=%s port=%d dbname=%s user=%s password=%s sslmode=disable", c.DBHost, c.DBPort, c.DBName, c.DBUser, c.DBPass)
-}
+var (
+	deleteQs               = `DELETE FROM events where id = $1 RETURNING id`
+	deleteStatusQs         = `DELETE FROM events_status where event_id = $1`
+	deleteObsoleteEventsQs = fmt.Sprintf(`DELETE FROM events WHERE id IN (%s);`, selectObsoleteEventsQs)
+	deleteObsoleteStatusQs = fmt.Sprintf(`DELETE FROM events_status WHERE event_id IN (%s);`, selectObsoleteEventsQs)
+)
 
-func (r *PSQLRepo) Connect(ctx context.Context, c *config.Config) (err error) {
-	r.db, err = sqlx.Connect("postgres", getDSN(c))
+func (r *PSQLRepo) Connect(ctx context.Context, url string) (err error) {
+	log.Debug().Msgf("Connecting to %s", url)
+	r.db, err = sqlx.Connect("postgres", url)
 	if err != nil {
 		return fmt.Errorf("%s: %w", ErrDBOpen, err)
 	}
-	if c.DBMaxConn != 0 {
-		r.db.SetMaxOpenConns(c.DBMaxConn)
-	}
-	if c.DBItemsPerQuery != 0 {
-		r.itemsPerQuery = c.DBItemsPerQuery
+	if r.maxConn != 0 {
+		r.db.SetMaxOpenConns(r.maxConn)
 	}
 	return r.db.PingContext(ctx)
 }
@@ -59,8 +67,18 @@ func (r *PSQLRepo) Close() error {
 	return r.db.Close()
 }
 
-func NewPSQLRepo() *PSQLRepo {
-	return &PSQLRepo{itemsPerQuery: 100, validator: NewEventValidator()}
+func NewPSQLRepo(args ...interface{}) *PSQLRepo {
+	nums := make([]int, len(args))
+	for i, el := range args {
+		if n, ok := el.(int); ok {
+			nums[i] = n
+		}
+	}
+	return &PSQLRepo{
+		itemsPerQuery: nums[0],
+		maxConn:       nums[1],
+		validator:     NewEventValidator(),
+	}
 }
 
 func (r *PSQLRepo) getEventsBetween(startPeriod time.Time, endPeriod time.Time) (result []Event, err error) {
@@ -78,9 +96,7 @@ func (r *PSQLRepo) getEventByID(id int64) (result Event, err error) {
 }
 
 func (r *PSQLRepo) GetDayEvents(date time.Time) (result []Event, err error) {
-	query := "SELECT * FROM events WHERE start_date = $1 ORDER BY start_date ASC LIMIT $2"
-	err = r.db.Select(&result, query, date, r.itemsPerQuery)
-	return
+	return r.getEventsBetween(date, date.AddDate(0, 0, 1))
 }
 
 func (r *PSQLRepo) GetWeekEvents(date time.Time) (result []Event, err error) {
@@ -92,7 +108,15 @@ func (r *PSQLRepo) GetMonthEvents(date time.Time) (result []Event, err error) {
 }
 
 func (r *PSQLRepo) DeleteEvent(id int64) (err error) {
-	result, err := r.db.Exec(deleteQs, id)
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return
+	}
+	_, err = tx.Exec(deleteStatusQs, id)
+	if err != nil {
+		return
+	}
+	result, err := tx.Exec(deleteQs, id)
 	if err != nil {
 		return
 	}
@@ -103,6 +127,9 @@ func (r *PSQLRepo) DeleteEvent(id int64) (err error) {
 	if n == 0 {
 		err = sql.ErrNoRows
 	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
 	return
 }
 
@@ -111,10 +138,15 @@ func (r *PSQLRepo) CreateEvent(data Event) (event Event, err error) {
 	if err != nil {
 		return
 	}
-	stmt, err := r.db.PrepareNamed(insertQs)
+	tx, err := r.db.Beginx()
 	if err != nil {
 		return
 	}
+	stmt, err := tx.PrepareNamed(insertQs)
+	if err != nil {
+		return
+	}
+
 	row := stmt.QueryRow(data)
 	if err = row.Err(); err != nil {
 		return
@@ -124,9 +156,18 @@ func (r *PSQLRepo) CreateEvent(data Event) (event Event, err error) {
 	if err != nil {
 		return
 	}
+
 	if evt.ID == 0 {
 		err = ErrEventNotFound
 		return
+	}
+	_, err = tx.Exec(insertStatusQs, evt.ID)
+	if err != nil {
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		return evt, err
 	}
 	return r.getEventByID(evt.ID)
 }
@@ -158,4 +199,73 @@ func (r *PSQLRepo) UpdateEvent(id int64, data Event) (event Event, err error) {
 		return
 	}
 	return r.getEventByID(id)
+}
+
+func (r *PSQLRepo) GetCurrentEvents() (result []Event, err error) {
+	err = r.db.Select(&result, selectCurrentEventsQs)
+	return
+}
+
+func (r *PSQLRepo) processEvents(events *[]Event, queryString string, status string) error {
+	if len(*events) == 0 {
+		return nil
+	}
+	ids := make([]int64, len(*events))
+	for i, el := range *events {
+		ids[i] = el.ID
+	}
+	arg := map[string]interface{}{
+		"ids":    ids,
+		"status": status,
+	}
+	query, args, err := sqlx.Named(queryString, arg)
+	if err != nil {
+		return err
+	}
+	query, args, err = sqlx.In(query, args...)
+	if err != nil {
+		return err
+	}
+	query = r.db.Rebind(query)
+	row, err := r.db.Queryx(query, args...)
+	if err != nil {
+		return err
+	}
+	defer row.Close()
+
+	if err != nil {
+		return err
+	}
+	return row.Err()
+}
+
+func (r *PSQLRepo) MarkEventsAsProcessing(events *[]Event) error {
+	return r.processEvents(events, updateEventsStatusQs, "Processing")
+}
+
+func (r *PSQLRepo) MarkEventsAsSent(events *[]Event) error {
+	return r.processEvents(events, updateEventsStatusQs, "Sent")
+}
+
+func (r *PSQLRepo) DeleteObsoleteEvents() (err error) {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return
+	}
+	_, err = tx.Exec(deleteObsoleteStatusQs)
+	if err != nil {
+		return
+	}
+	result, err := tx.Exec(deleteObsoleteEventsQs)
+	if err != nil {
+		return
+	}
+	_, err = result.RowsAffected()
+	if err != nil {
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return
 }

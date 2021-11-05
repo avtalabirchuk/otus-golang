@@ -1,9 +1,9 @@
 package service
 
 import (
-	grpc "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/service/server"
-
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/repository"
+
+	grpc "github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/service/server"
 )
 
 type Service interface {
@@ -11,6 +11,6 @@ type Service interface {
 	RunGRPC(string) error
 }
 
-func New(r repository.Base) Service {
+func New(r repository.CRUD) Service {
 	return grpc.New(r)
 }

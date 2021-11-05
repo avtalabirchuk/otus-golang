@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
@@ -21,14 +22,14 @@ var (
 )
 
 type Service struct {
-	r repository.Base
+	r repository.CRUD
 }
 
-func New(r repository.Base) *Service {
+func New(r repository.CRUD) *Service {
 	return &Service{r: r}
 }
 
-func processEvents(repo repository.Base, query *QueryEventsRequest) (events []repository.Event, err error) {
+func processEvents(repo repository.CRUD, query *QueryEventsRequest) (events []repository.Event, err error) {
 	startDate := time.Now()
 	if ts := query.GetTs(); ts != 0 {
 		startDate = time.Unix(ts, 0)
@@ -82,7 +83,9 @@ func (s *Service) CreateEvent(ctx context.Context, event *Event) (result *Event,
 	}
 	evt, err := s.r.CreateEvent(*obj)
 	if err != nil {
-		err = status.Errorf(codes.InvalidArgument, "%s", err)
+		if _, ok := err.(validator.ValidationErrors); ok {
+			err = status.Errorf(codes.InvalidArgument, "%s", err)
+		}
 		return
 	}
 	log.Debug().Msgf("[GRPC] Created Event: %+v\n", evt)
@@ -97,7 +100,9 @@ func (s *Service) UpdateEvent(ctx context.Context, data *UpdateEventRequest) (re
 	}
 	evt, err := s.r.UpdateEvent(data.Id, *obj)
 	if err != nil {
-		err = status.Errorf(codes.InvalidArgument, "%s", err)
+		if _, ok := err.(validator.ValidationErrors); ok {
+			err = status.Errorf(codes.InvalidArgument, "%s", err)
+		}
 		return
 	}
 	log.Debug().Msgf("[GRPC] Updated Event: %+v\n", evt)

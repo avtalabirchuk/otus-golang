@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/config"
 	"github.com/avtalabirchuk/otus-golang/hw12_13_14_15_calendar/internal/utils"
 )
 
@@ -16,7 +15,7 @@ type MemoryRepo struct {
 	mx      sync.RWMutex
 }
 
-func (r *MemoryRepo) Connect(ctx context.Context, c *config.Config) error {
+func (r *MemoryRepo) Connect(ctx context.Context, url string) error {
 	return nil
 }
 
@@ -106,4 +105,16 @@ func (r *MemoryRepo) DeleteEvent(id int64) (err error) {
 	}
 	delete(r.storage, id)
 	return
+}
+
+func (r *MemoryRepo) GetCurrentEvents() (result []Event, err error) {
+	return r.GetDayEvents(time.Now())
+}
+
+func (r *MemoryRepo) MarkEventsAsSent(ids *[]int64) error {
+	return nil
+}
+
+func (r *MemoryRepo) MarkEventsAsProcessed(ids *[]int64) error {
+	return nil
 }

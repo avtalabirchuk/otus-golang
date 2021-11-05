@@ -11,7 +11,7 @@ func NewEventValidator() *validator.Validate {
 }
 
 func EventStructLevelValidation(sl validator.StructLevel) {
-	event := sl.Current().Interface().(Event)
+	event, _ := sl.Current().Interface().(Event)
 
 	if event.StartDate.Unix() == 0 {
 		sl.ReportError(event.StartDate, "StartDate", "StartDate", "required", "")
