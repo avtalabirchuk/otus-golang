@@ -13,7 +13,6 @@ import (
 var ErrUnSupportedRepoType = errors.New("unsupported repository type")
 
 type dbConnector interface {
-	Init(context.Context, string, string) error
 	Connect(context.Context, string) error
 	Close() error
 }

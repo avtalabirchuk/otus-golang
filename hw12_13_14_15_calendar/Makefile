@@ -12,7 +12,7 @@ build:
 
 .PHONY: test
 test:
-	go test -race ./...
+	go test -race -v `go list ./... | grep -v integration-tests`
 
 install-lint-deps:
 	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.37.0
@@ -46,7 +46,7 @@ down:
 
 integration-tests:
 	docker-compose -f deployments/docker-compose.yml up -d --build
-	ginkgo ./tests
+	ginkgo ./integration-tests
 	docker-compose -f deployments/docker-compose.yml down
 
 .PHONY: generate

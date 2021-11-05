@@ -23,10 +23,6 @@ func (r *MemoryRepo) Connect(ctx context.Context, url string) error {
 	return nil
 }
 
-func (r *MemoryRepo) Init(ctx context.Context, url, migrationsDir string) (err error) {
-	return nil
-}
-
 func (r *MemoryRepo) Close() error {
 	r.ClearStorage()
 	return nil
