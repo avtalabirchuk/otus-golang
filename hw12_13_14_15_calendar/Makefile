@@ -34,10 +34,6 @@ run:
 version: build
 	$(BIN) version
 
-.PHONY: migrate
-migrate:
-	./scripts/migrations.sh
-
 up:
 	docker-compose -f deployments/docker-compose.yml up -d --build
 	
@@ -45,9 +41,9 @@ down:
 	docker-compose -f deployments/docker-compose.yml down -v
 
 integration-tests:
-	docker-compose -f deployments/docker-compose.yml up -d --build
-	ginkgo ./integration-tests
-	docker-compose -f deployments/docker-compose.yml down
+	docker-compose -f deployments/docker-compose.yml -f deployments/docker-compose.test.yml up -d --build && \
+	API_HOST=http://localhost:8888 ginkgo ./integration-tests && \
+	docker-compose -f deployments/docker-compose.yml -f deployments/docker-compose.test.yml down
 
 .PHONY: generate
 generate:
@@ -58,5 +54,5 @@ generate:
 	--grpc-gateway_out=logtostderr=true:${cdir}/service/server \
 	${cdir}/service/schema/calendar.proto
 
-
+.PHONY: build integration-tests
 # protoc -I /usr/local/include -I ${cdir}/service/grpc/schema --go_out=plugins=grpc:${cdir}/service/grpc/server ${cdir}/service/grpc/schema/calendar.proto

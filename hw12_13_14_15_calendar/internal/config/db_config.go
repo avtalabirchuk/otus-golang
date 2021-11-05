@@ -9,6 +9,4 @@ type DBConfig struct {
 	MaxConn       int    `yaml:"maxConn" env:"DB_MAX_CONN" env-default:"10"`
 	ItemsPerQuery int    `yaml:"itemsPerQuery" env:"DB_ITEMS_PER_QUERY" env-default:"100"`
 	RepoType      string `yaml:"repoType" env:"DB_REPO_TYPE"`
-	MigrationsDir string `yaml:"migrationsDir" env:"DB_MIGRATIONS_DIR"`
-	InitOnStart   bool   `yaml:"initOnStart" env:"INIT_ON_START"`
 }

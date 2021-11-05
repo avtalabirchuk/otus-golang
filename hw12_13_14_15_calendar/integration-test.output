@@ -1,5 +1,8 @@
 andrey.talabirchuk@MacBook-Pro-X5-2  ~/golang/otus-golang/hw12_13_14_15_calendar   hw15_calendar ±  make integration-tests
-docker-compose -f deployments/docker-compose.yml up -d --build
+docker-compose -f deployments/docker-compose.yml -f deployments/docker-compose.test.yml up -d --build && \
+        API_HOST=http://localhost:8888 ginkgo ./integration-tests && \
+        docker-compose -f deployments/docker-compose.yml -f deployments/docker-compose.test.yml down
+Creating network "deployments_default" with the default driver
 Building queue
 Sending build context to Docker daemon  2.048kB
 Step 1/2 : FROM rabbitmq:3-management
@@ -11,99 +14,8 @@ Successfully built 84632d8c48b3
 Successfully tagged deployments_queue:latest
 
 Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
-Building calendar
-Sending build context to Docker daemon  86.29MB
-Step 1/13 : FROM golang:1.16-alpine3.13 as build
- ---> f50cbbcf02ee
-Step 2/13 : ENV GO111MODULE=on     CGO_ENABLED=0     GOOS=linux
- ---> Using cache
- ---> 6d36127cec45
-Step 3/13 : WORKDIR /build
- ---> Using cache
- ---> fed34d558c7a
-Step 4/13 : COPY go.mod go.sum ./
- ---> 578ecb6c53ac
-Step 5/13 : RUN go mod download
- ---> Running in 59e6fd6e8c4b
-Removing intermediate container 59e6fd6e8c4b
- ---> 30e595ee5683
-Step 6/13 : COPY . .
- ---> f10b8620c12d
-Step 7/13 : ARG MAIN_FILE_PATH
- ---> Running in 19424ab42ebe
-Removing intermediate container 19424ab42ebe
- ---> c088f6efb878
-Step 8/13 : RUN go build -o main $MAIN_FILE_PATH
- ---> Running in 8fd9af8bf924
-Removing intermediate container 8fd9af8bf924
- ---> 69260afc75b7
-Step 9/13 : RUN chmod +x main
- ---> Running in 7ebf6230bbfd
-Removing intermediate container 7ebf6230bbfd
- ---> 0150ad5c9620
-Step 10/13 : FROM alpine:3.13
- ---> 12adea71a33b
-Step 11/13 : COPY --from=build /build/main /
- ---> a24bfd700e00
-Step 12/13 : EXPOSE 8081
- ---> Running in 81c18a5a9a4d
-Removing intermediate container 81c18a5a9a4d
- ---> f45ef61ec773
-Step 13/13 : ENTRYPOINT ["/main"]
- ---> Running in 8f9b5f71d518
-Removing intermediate container 8f9b5f71d518
- ---> 58d7602036f9
-Successfully built 58d7602036f9
-Successfully tagged deployments_calendar:latest
-
-Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
-Building calendar_scheduler
-Sending build context to Docker daemon  86.29MB
-Step 1/13 : FROM golang:1.16-alpine3.13 as build
- ---> f50cbbcf02ee
-Step 2/13 : ENV GO111MODULE=on     CGO_ENABLED=0     GOOS=linux
- ---> Using cache
- ---> 6d36127cec45
-Step 3/13 : WORKDIR /build
- ---> Using cache
- ---> fed34d558c7a
-Step 4/13 : COPY go.mod go.sum ./
- ---> Using cache
- ---> 578ecb6c53ac
-Step 5/13 : RUN go mod download
- ---> Using cache
- ---> 30e595ee5683
-Step 6/13 : COPY . .
- ---> Using cache
- ---> f10b8620c12d
-Step 7/13 : ARG MAIN_FILE_PATH
- ---> Using cache
- ---> c088f6efb878
-Step 8/13 : RUN go build -o main $MAIN_FILE_PATH
- ---> Running in 5af18bf58bd9
-Removing intermediate container 5af18bf58bd9
- ---> 3e329630aa89
-Step 9/13 : RUN chmod +x main
- ---> Running in 6524a75d8bfb
-Removing intermediate container 6524a75d8bfb
- ---> 4044259a0321
-Step 10/13 : FROM alpine:3.13
- ---> 12adea71a33b
-Step 11/13 : COPY --from=build /build/main /
- ---> Using cache
- ---> 7afd79e24f9d
-Step 12/13 : EXPOSE 8081
- ---> Using cache
- ---> ea717267d1fe
-Step 13/13 : ENTRYPOINT ["/main"]
- ---> Using cache
- ---> 2f63459493af
-Successfully built 2f63459493af
-Successfully tagged deployments_calendar_scheduler:latest
-
-Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
 Building calendar_sender
-Sending build context to Docker daemon  86.29MB
+Sending build context to Docker daemon  88.11MB
 Step 1/13 : FROM golang:1.16-alpine3.13 as build
  ---> f50cbbcf02ee
 Step 2/13 : ENV GO111MODULE=on     CGO_ENABLED=0     GOOS=linux
@@ -119,71 +31,194 @@ Step 5/13 : RUN go mod download
  ---> Using cache
  ---> 30e595ee5683
 Step 6/13 : COPY . .
- ---> Using cache
- ---> f10b8620c12d
+ ---> 265be8a77ec3
 Step 7/13 : ARG MAIN_FILE_PATH
- ---> Using cache
- ---> c088f6efb878
+ ---> Running in a0a584644619
+Removing intermediate container a0a584644619
+ ---> a2713f232b54
 Step 8/13 : RUN go build -o main $MAIN_FILE_PATH
- ---> Running in 212e9492043e
-Removing intermediate container 212e9492043e
- ---> e14ef1bdbda7
+ ---> Running in 6c9eea49f91e
+Removing intermediate container 6c9eea49f91e
+ ---> f31a7e5a186a
 Step 9/13 : RUN chmod +x main
- ---> Running in c7c6fff7d1f2
-Removing intermediate container c7c6fff7d1f2
- ---> b8198755a353
+ ---> Running in e31c45ca8b9d
+Removing intermediate container e31c45ca8b9d
+ ---> 3b4f8f7c0cdd
 Step 10/13 : FROM alpine:3.13
  ---> 12adea71a33b
 Step 11/13 : COPY --from=build /build/main /
- ---> Using cache
- ---> 1ae58229b4ad
+ ---> f15d25293671
 Step 12/13 : EXPOSE 8081
- ---> Using cache
- ---> 98a04029ce08
+ ---> Running in af8218f47800
+Removing intermediate container af8218f47800
+ ---> 1787fac8c182
 Step 13/13 : ENTRYPOINT ["/main"]
- ---> Using cache
- ---> 210549253aa7
-Successfully built 210549253aa7
+ ---> Running in 699a211b75eb
+Removing intermediate container 699a211b75eb
+ ---> c9f289b9fb13
+Successfully built c9f289b9fb13
 Successfully tagged deployments_calendar_sender:latest
 
 Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
-deployments_db_1 is up-to-date
-deployments_queue_1 is up-to-date
-Recreating deployments_calendar_1 ... 
-deployments_calendar_sender_1 is up-to-date
-Recreating deployments_calendar_1 ... done
-ginkgo ./tests
+Building migrator
+Sending build context to Docker daemon  88.11MB
+Step 1/8 : FROM golang:1.14-alpine
+ ---> 32dc91e030ac
+Step 2/8 : RUN apk update
+ ---> Using cache
+ ---> 9005ae040e0b
+Step 3/8 : ENV GO111MODULE=on     CGO_ENABLED=0     GOOS=linux
+ ---> Using cache
+ ---> 9266bbcb4e13
+Step 4/8 : WORKDIR /build
+ ---> Using cache
+ ---> 683d0ffe11c0
+Step 5/8 : RUN go get 'github.com/pressly/goose/cmd/goose'
+ ---> Using cache
+ ---> 1d51b90ac692
+Step 6/8 : RUN mkdir -p /opt/db
+ ---> Using cache
+ ---> 3da796c8c7db
+Step 7/8 : COPY ./migrations /opt/db/migrations
+ ---> Using cache
+ ---> ea47afe27090
+Step 8/8 : ENTRYPOINT /go/bin/goose -v -dir /opt/db/migrations postgres "host=$DB_HOST port=$DB_PORT user=$DB_USER password=$DB_PASSWORD dbname=$DB_NAME sslmode=disable" up
+ ---> Using cache
+ ---> 0d94f42ca184
+Successfully built 0d94f42ca184
+Successfully tagged deployments_migrator:latest
+
+Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
+Building calendar_scheduler
+Sending build context to Docker daemon  88.11MB
+Step 1/13 : FROM golang:1.16-alpine3.13 as build
+ ---> f50cbbcf02ee
+Step 2/13 : ENV GO111MODULE=on     CGO_ENABLED=0     GOOS=linux
+ ---> Using cache
+ ---> 6d36127cec45
+Step 3/13 : WORKDIR /build
+ ---> Using cache
+ ---> fed34d558c7a
+Step 4/13 : COPY go.mod go.sum ./
+ ---> Using cache
+ ---> 578ecb6c53ac
+Step 5/13 : RUN go mod download
+ ---> Using cache
+ ---> 30e595ee5683
+Step 6/13 : COPY . .
+ ---> Using cache
+ ---> 265be8a77ec3
+Step 7/13 : ARG MAIN_FILE_PATH
+ ---> Using cache
+ ---> a2713f232b54
+Step 8/13 : RUN go build -o main $MAIN_FILE_PATH
+ ---> Running in 9596ded263c1
+Removing intermediate container 9596ded263c1
+ ---> 4631a1b160b2
+Step 9/13 : RUN chmod +x main
+ ---> Running in 84eb2fc27bd1
+Removing intermediate container 84eb2fc27bd1
+ ---> ae1e6e461d83
+Step 10/13 : FROM alpine:3.13
+ ---> 12adea71a33b
+Step 11/13 : COPY --from=build /build/main /
+ ---> 22967a0276e7
+Step 12/13 : EXPOSE 8081
+ ---> Running in 28505325db06
+Removing intermediate container 28505325db06
+ ---> a5dbdd9dddc1
+Step 13/13 : ENTRYPOINT ["/main"]
+ ---> Running in 7bcee7562e10
+Removing intermediate container 7bcee7562e10
+ ---> 3f1997c0dc30
+Successfully built 3f1997c0dc30
+Successfully tagged deployments_calendar_scheduler:latest
+
+Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
+Building calendar
+Sending build context to Docker daemon  88.11MB
+Step 1/13 : FROM golang:1.16-alpine3.13 as build
+ ---> f50cbbcf02ee
+Step 2/13 : ENV GO111MODULE=on     CGO_ENABLED=0     GOOS=linux
+ ---> Using cache
+ ---> 6d36127cec45
+Step 3/13 : WORKDIR /build
+ ---> Using cache
+ ---> fed34d558c7a
+Step 4/13 : COPY go.mod go.sum ./
+ ---> Using cache
+ ---> 578ecb6c53ac
+Step 5/13 : RUN go mod download
+ ---> Using cache
+ ---> 30e595ee5683
+Step 6/13 : COPY . .
+ ---> Using cache
+ ---> 265be8a77ec3
+Step 7/13 : ARG MAIN_FILE_PATH
+ ---> Using cache
+ ---> a2713f232b54
+Step 8/13 : RUN go build -o main $MAIN_FILE_PATH
+ ---> Running in 923df5f3b748
+Removing intermediate container 923df5f3b748
+ ---> d357216c25ab
+Step 9/13 : RUN chmod +x main
+ ---> Running in a89023463ace
+Removing intermediate container a89023463ace
+ ---> 0567655d9d84
+Step 10/13 : FROM alpine:3.13
+ ---> 12adea71a33b
+Step 11/13 : COPY --from=build /build/main /
+ ---> 786b96454e24
+Step 12/13 : EXPOSE 8081
+ ---> Running in ce020eac94a4
+Removing intermediate container ce020eac94a4
+ ---> 387b813a178a
+Step 13/13 : ENTRYPOINT ["/main"]
+ ---> Running in 9ea7e7964183
+Removing intermediate container 9ea7e7964183
+ ---> 0e4f6d9c489c
+Successfully built 0e4f6d9c489c
+Successfully tagged deployments_calendar:latest
+
+Use 'docker scan' to run Snyk tests against images to find vulnerabilities and learn how to fix them
+Creating deployments_queue_1 ... done
+Creating deployments_db_1    ... done
+Creating deployments_calendar_1 ... done
+Creating deployments_migrator_1 ... done
+Creating deployments_calendar_sender_1    ... done
+Creating deployments_calendar_scheduler_1 ... done
 Running Suite: Tests Suite
 ==========================
-Random Seed: 1636130627
+Random Seed: 1636137004
 Will run 8 of 8 specs
 
 •••••••
 ------------------------------
-• [SLOW TEST:10.018 seconds]
+• [SLOW TEST:10.012 seconds]
 Sender
-/Users/andrey.talabirchuk/golang/otus-golang/hw12_13_14_15_calendar/tests/sender_test.go:12
+/Users/andrey.talabirchuk/golang/otus-golang/hw12_13_14_15_calendar/integration-tests/sender_test.go:12
   Event
-  /Users/andrey.talabirchuk/golang/otus-golang/hw12_13_14_15_calendar/tests/sender_test.go:13
+  /Users/andrey.talabirchuk/golang/otus-golang/hw12_13_14_15_calendar/integration-tests/sender_test.go:13
     should receive event
-    /Users/andrey.talabirchuk/golang/otus-golang/hw12_13_14_15_calendar/tests/sender_test.go:14
+    /Users/andrey.talabirchuk/golang/otus-golang/hw12_13_14_15_calendar/integration-tests/sender_test.go:14
 ------------------------------
 
-Ran 8 of 8 Specs in 10.192 seconds
+Ran 8 of 8 Specs in 10.189 seconds
 SUCCESS! -- 8 Passed | 0 Failed | 0 Pending | 0 Skipped
 PASS
 
-Ginkgo ran 1 suite in 11.707688523s
+Ginkgo ran 1 suite in 11.880764766s
 Test Suite Passed
-docker-compose -f deployments/docker-compose.yml down
-Stopping deployments_calendar_1           ... done
 Stopping deployments_calendar_scheduler_1 ... done
 Stopping deployments_calendar_sender_1    ... done
+Stopping deployments_calendar_1           ... done
 Stopping deployments_db_1                 ... done
 Stopping deployments_queue_1              ... done
-Removing deployments_calendar_1           ... done
 Removing deployments_calendar_scheduler_1 ... done
 Removing deployments_calendar_sender_1    ... done
+Removing deployments_migrator_1           ... done
+Removing deployments_calendar_1           ... done
 Removing deployments_db_1                 ... done
 Removing deployments_queue_1              ... done
 Removing network deployments_default
+ andrey.talabirchuk@MacBook-Pro-X5-2  ~/golang/otus-golang/hw12_13_14_15_calendar   hw15_calendar ±  

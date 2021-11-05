@@ -8,16 +8,25 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
-
-var apiHost = "http://0.0.0.0:8888"
-
-// var apiHost = "http://localhost:50052"
 
 var (
-	EventsURL = fmt.Sprintf("%s/events", apiHost)
-	UsersURL  = fmt.Sprintf("%s/users", apiHost)
+	EventsURL string
+	UsersURL  string
 )
+
+func init() {
+	apiHost, ok := os.LookupEnv("API_HOST")
+
+	if !ok {
+		fmt.Fprintf(os.Stderr, "API_HOST is not defined")
+		os.Exit(1)
+	}
+
+	EventsURL = fmt.Sprintf("%s/events", apiHost)
+	UsersURL = fmt.Sprintf("%s/users", apiHost)
+}
 
 func makeRequest(url string, method string, body io.Reader) (resp *http.Response, err error) {
 	req, err := http.NewRequestWithContext(context.Background(), method, url, body)
