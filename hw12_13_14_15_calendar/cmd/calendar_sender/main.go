@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"strconv"
 
 	"github.com/rs/zerolog/log"
 
@@ -36,9 +34,8 @@ func main() {
 	}
 
 	qCfg := cfg.QueueConfig
-
 	consumer := queue.NewConsumer(
-		fmt.Sprintf("amqp://%s:%s@%s:%s/", qCfg.User, qCfg.Pass, qCfg.Host, strconv.Itoa(qCfg.Port)),
+		qCfg.URI,
 		qCfg.QueueName,
 		qCfg.ExchangeType,
 		qCfg.QosPrefetchCount,

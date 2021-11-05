@@ -3,9 +3,6 @@ logConfig:
   filePath: "logs/calendar_sender.log"
 
 queueConfig:
-  user: "guest"
-  pass: "guest"
-  host: "localhost"
-  port: 5672
+  uri: "amqp://guest:guest@localhost:5672/"
   queueName: "events"
   scanTimeout: 10

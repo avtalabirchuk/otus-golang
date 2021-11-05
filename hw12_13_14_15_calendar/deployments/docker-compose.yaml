@@ -3,18 +3,85 @@ version: "3"
 services:
   db:
     image: postgres:14
+    environment:
+      - POSTGRES_USER=db_calendar_user
+      - POSTGRES_DB=db_calendar
+      - POSTGRES_PASSWORD=db_calendar_pass
     env_file:
       - postgres.env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+  queue:
+    build:
+      context: ./rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    ports:
+      - "5672:5672"
+      - "15672:15672"
   calendar:
     build:
       context: ../
-      dockerfile: ./build/calendar/Dockerfile
+      dockerfile: ./deployments/Dockerfile
+      args:
+        - MAIN_FILE_PATH=cmd/calendar/main.go
     env_file:
       - database.env
       - logger.env
       - api.env
     environment:
-      - DB_HOST=db
-      - DB_PORT=5432
+      - PORT=8081
+    volumes:
+      - ../migrations:/migrations
+    ports:
+      - "8888:8081"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+  calendar_scheduler:
+    build:
+      context: ../
+      dockerfile: ./deployments/Dockerfile
+      args:
+        - MAIN_FILE_PATH=cmd/calendar_scheduler/main.go
+    env_file:
+      - database.env
+      - logger.env
+      - queue.env
+    volumes:
+      - ../migrations:/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
+  calendar_sender:
+    build:
+      context: ../
+      dockerfile: ./deployments/Dockerfile
+      args:
+        - MAIN_FILE_PATH=cmd/calendar_sender/main.go
+    env_file:
+      - database.env
+      - logger.env
+      - queue.env
+    volumes:
+      - ../migrations:/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+      queue:
+        condition: service_healthy

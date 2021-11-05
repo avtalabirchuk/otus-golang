@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
@@ -36,22 +34,15 @@ func readConfig(fpath string, cfg interface{}) error {
 
 func NewCalendar(fpath string) (*Calendar, error) {
 	var cfg Calendar
-	err := readConfig(fpath, &cfg)
-	fmt.Printf("ERRRRR %s\n", err)
-	fmt.Printf("EXAMPLE_PATH004 %+v \n", cfg)
-	return &cfg, err
+	return &cfg, readConfig(fpath, &cfg)
 }
 
 func NewScheduler(fpath string) (*Scheduler, error) {
-	cfg := &Scheduler{
-		QueueConfig: defaultQueueConfig(),
-	}
-	return cfg, readConfig(fpath, cfg)
+	var cfg Scheduler
+	return &cfg, readConfig(fpath, &cfg)
 }
 
 func NewSender(fpath string) (*Sender, error) {
-	cfg := &Sender{
-		QueueConfig: defaultQueueConfig(),
-	}
-	return cfg, readConfig(fpath, cfg)
+	var cfg Sender
+	return &cfg, readConfig(fpath, &cfg)
 }

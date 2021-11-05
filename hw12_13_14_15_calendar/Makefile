@@ -10,6 +10,17 @@ build:
 	mkdir -p bin
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./...
 
+.PHONY: test
+test:
+	go test -race ./...
+
+install-lint-deps:
+	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.37.0
+
+.PHONY: lint
+lint: install-lint-deps
+	golangci-lint run ./...
+
 launch:
 	./bin/calendar -config=./configs/calendar.yml & \
 	./bin/calendar_scheduler -config=./configs/scheduler.yml & \
@@ -23,25 +34,15 @@ run:
 version: build
 	$(BIN) version
 
-.PHONY: test
-test:
-	# go test -race ./internal/... ./pkg/...
-	go test -race ./...
-
-.PHONY: test-pq
-test-pq:
-	PQ_TEST="postgresql://db_calendar_user:db_calendar_pass@localhost:5432/db_calendar" go test -v -count=1 -race -timeout=30s ./...
-
-install-lint-deps:
-	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.37.0
-
-.PHONY: lint
-lint: install-lint-deps
-	golangci-lint run ./...
-
 .PHONY: migrate
 migrate:
 	./scripts/migrations.sh
+
+up:
+	docker-compose -f deployments/docker-compose.yml up -d
+	
+down:
+	docker-compose -f deployments/docker-compose.yml down
 
 .PHONY: generate
 generate:

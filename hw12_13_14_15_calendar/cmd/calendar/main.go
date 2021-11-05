@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"os"
+	"path/filepath"
 
 	"github.com/rs/zerolog/log"
 
@@ -42,8 +44,13 @@ func main() {
 		fatal(repository.ErrUnSupportedRepoType)
 	}
 
-	if cfg.DBConfig.ApplyMigrations {
-		if err = repo.Init(context.Background(), repository.GetRootSQLDSN(&cfg.DBConfig)); err != nil {
+	if cfg.DBConfig.InitOnStart {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			fatal(err)
+		}
+		migrationsDir := filepath.Join(currentDir, cfg.DBConfig.MigrationsDir)
+		if err = repo.Init(context.Background(), repository.GetSQLDSN(&cfg.DBConfig), migrationsDir); err != nil {
 			fatal(err)
 		}
 	} else {

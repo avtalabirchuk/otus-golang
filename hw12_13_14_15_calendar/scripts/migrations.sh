@@ -21,7 +21,7 @@ function parse_yaml {
 file=tmp.sh
 # Load all variables to tmp file
 parse_yaml configs/calendar.yml > $file
-echo "goose -dir ./migrations postgres \"host=127.0.0.1 user=\$dbConfig_user password=\$dbConfig_pass  dbname=\$dbConfig_dbName sslmode=disable\" up" >> $file
+echo "goose -dir ./migrations postgres \"user=\$dbConfig_user password=\$dbConfig_pass sslmode=disable\" down" >> $file
 chmod +x $file
 sh $file
-#rm $file
+rm $file
